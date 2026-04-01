@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { setOptions, importLibrary } from '@googlemaps/js-api-loader'
 import styles from './BusMap.module.css'
+import { createOriginMarker, createDestinationMarker, createStopMarker, createBusMarker } from '../lib/map-markers'
 
 const ORIGIN = { lat: 21.123232, lng: -101.731127 }
 const DESTINATION = { lat: 21.13129, lng: -101.71705 }
@@ -102,10 +103,8 @@ export default function BusMap() {
         zoom: 14, mapId: 'bus-routes-map', mapTypeControl: false, streetViewControl: false, fullscreenControl: true,
       })
       // Markers
-      const originEl = document.createElement('div'); originEl.style.cssText = 'width:14px;height:14px;border-radius:50%;background:#22C55E;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.4);'
-      new AdvancedMarkerElement({ map: mapInstance, position: ORIGIN, content: originEl, title: 'Tu origen' })
-      const destEl = document.createElement('div'); destEl.style.cssText = 'width:14px;height:14px;border-radius:50%;background:#EF4444;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.4);'
-      new AdvancedMarkerElement({ map: mapInstance, position: DESTINATION, content: destEl, title: 'Tu destino' })
+      new AdvancedMarkerElement({ map: mapInstance, position: ORIGIN, content: createOriginMarker(), title: 'Tu origen' })
+      new AdvancedMarkerElement({ map: mapInstance, position: DESTINATION, content: createDestinationMarker(), title: 'Tu destino' })
       setMap(mapInstance)
     }
     initMap()
@@ -195,32 +194,15 @@ export default function BusMap() {
         overlaysRef.current.push(activePoly)
 
         // 3. Add stop markers
-        // Boarding
-        const bEl = document.createElement('div')
-        bEl.style.cssText = `width:11px;height:11px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.35);`
-        const bMarker = new MarkerClass({ map, position: coords[boardingIdx], content: bEl, title: `Abordas` })
+        const bMarker = new MarkerClass({ map, position: coords[boardingIdx], content: createStopMarker(color), title: `Abordas` })
         overlaysRef.current.push(bMarker)
-        
-        // Alighting
-        const aEl = document.createElement('div')
-        aEl.style.cssText = `width:11px;height:11px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.35);`
-        const aMarker = new MarkerClass({ map, position: coords[alightingIdx], content: aEl, title: `Bajas` })
+        const aMarker = new MarkerClass({ map, position: coords[alightingIdx], content: createStopMarker(color), title: `Bajas` })
         overlaysRef.current.push(aMarker)
 
         // 4. Add Bus Markers
         const buses = busData[lineName]?.data || []
         buses.forEach((bus) => {
-          const busEl = document.createElement('div')
-          busEl.className = styles.busMarker
-          busEl.style.setProperty('--route-color', color)
-          
-          busEl.innerHTML = `
-            <svg class="${styles.busMarkerIcon}" viewBox="0 0 24 24">
-              <path d="M4 16c0 .88.39 1.67 1 2.22V20c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h8v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10zM15.5 5H19v5h-3.5V5zM5 5h3.5v5H5V5zM12 17c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/>
-            </svg>
-            <div class="${styles.busMarkerLineLabel}">${lineName}</div>
-          `
-          const busMarker = new MarkerClass({ map, position: { lat: bus.latitude, lng: bus.longitude }, content: busEl, title: `Bus ${bus.id}` })
+          const busMarker = new MarkerClass({ map, position: { lat: bus.latitude, lng: bus.longitude }, content: createBusMarker(lineName, color), title: `Bus ${bus.id}` })
           overlaysRef.current.push(busMarker)
         })
 
