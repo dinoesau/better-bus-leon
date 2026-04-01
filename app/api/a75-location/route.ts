@@ -18,7 +18,7 @@ export async function GET(): Promise<Response> {
         status: 502,
         headers: {
           'Content-Type': 'application/json',
-          'CDN-Cache-Control': 'max-age=20',
+          'CDN-Cache-Control': 'max-age=60',
         },
       });
     }
@@ -31,7 +31,7 @@ export async function GET(): Promise<Response> {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
-        'CDN-Cache-Control': 'max-age=20',
+        'CDN-Cache-Control': 'max-age=60',
       },
     });
   } catch (err) {
@@ -39,7 +39,7 @@ export async function GET(): Promise<Response> {
       status: 500,
       headers: {
         'Content-Type': 'application/json',
-        'CDN-Cache-Control': 'max-age=20',
+        'CDN-Cache-Control': 'max-age=60',
       },
     });
   }
