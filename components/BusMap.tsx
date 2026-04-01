@@ -7,7 +7,17 @@ import styles from './BusMap.module.css'
 const ORIGIN = { lat: 21.123232, lng: -101.731127 }
 const DESTINATION = { lat: 21.13129, lng: -101.71705 }
 const ALLOWED_LINES = ['A-03', 'A-75'] as const
+type AllowedLine = typeof ALLOWED_LINES[number]
 const ROUTE_COLORS: Record<string, string> = { 'A-03': '#E53E3E', 'A-75': '#2B6CB0' }
+
+interface Bus {
+  id: string
+  latitude: number
+  longitude: number
+}
+
+type KmlCoords = { lat: number; lng: number }[]
+type KmlRouteData = Record<string, KmlCoords | { lat: number; lng: number }>
 
 // --- KML utilities ---
 function parseKmlCoords(text: string) {
@@ -17,11 +27,11 @@ function parseKmlCoords(text: string) {
   }).filter((c) => !isNaN(c.lat) && !isNaN(c.lng))
 }
 
-async function loadRouteKml(routeId: string) {
+async function loadRouteKml(routeId: string): Promise<KmlRouteData> {
   const res = await fetch(`/data/${routeId}.kml`)
   const text = await res.text()
   const doc = new DOMParser().parseFromString(text, 'application/xml')
-  const out: Record<string, any> = {}
+  const out: KmlRouteData = {}
   doc.querySelectorAll('Placemark').forEach((pm) => {
     const name = pm.querySelector('name')?.textContent?.trim()
     const lc = pm.querySelector('LineString coordinates')
@@ -35,7 +45,7 @@ async function loadRouteKml(routeId: string) {
   return out
 }
 
-function nearestIdx(coords: { lat: number; lng: number }[], lat: number, lng: number) {
+function nearestIdx(coords: KmlCoords, lat: number, lng: number) {
   let best = 0
   let bestDist = Infinity
   coords.forEach((c, i) => {
@@ -45,10 +55,11 @@ function nearestIdx(coords: { lat: number; lng: number }[], lat: number, lng: nu
   return best
 }
 
-function detectDirection(kml: Record<string, any>, lineName: string, boardingLat: number, boardingLng: number, alightingLat: number, alightingLng: number) {
+function detectDirection(kml: KmlRouteData, lineName: string, boardingLat: number, boardingLng: number, alightingLat: number, alightingLng: number) {
   for (const suffix of ['ida', 'regreso']) {
-    const coords = kml[`${lineName}-${suffix}`]
-    if (!coords || coords.length < 2) continue
+    const data = kml[`${lineName}-${suffix}`]
+    if (!data || !Array.isArray(data) || data.length < 2) continue
+    const coords = data as KmlCoords
     const bIdx = nearestIdx(coords, boardingLat, boardingLng)
     const aIdx = nearestIdx(coords, alightingLat, alightingLng)
     if (aIdx > bIdx) return { coords, boardingIdx: bIdx, alightingIdx: aIdx }
@@ -63,15 +74,15 @@ function drawPolyline(map: google.maps.Map, path: google.maps.LatLngLiteral[], c
 export default function BusMap() {
   const mapRef = useRef<HTMLDivElement>(null)
   const [map, setMap] = useState<google.maps.Map | null>(null)
-  const [MarkerClass, setMarkerClass] = useState<any>(null)
-  const overlaysRef = useRef<(google.maps.Polyline | any)[]>([])
+  const [MarkerClass, setMarkerClass] = useState<typeof google.maps.marker.AdvancedMarkerElement | null>(null)
+  const overlaysRef = useRef<(google.maps.Polyline | google.maps.marker.AdvancedMarkerElement)[]>([])
   
-  const [busData, setBusData] = useState<Record<string, { loading: boolean, error: boolean, data: any[] }>>({
+  const [busData, setBusData] = useState<Record<string, { loading: boolean, error: boolean, data: Bus[] }>>({
     'A-03': { loading: true, error: false, data: [] },
     'A-75': { loading: true, error: false, data: [] },
   })
   
-  const [kmlData, setKmlData] = useState<Record<string, any>>({})
+  const [kmlData, setKmlData] = useState<Record<string, KmlRouteData>>({})
   const [routes, setRoutes] = useState<google.maps.DirectionsRoute[]>([])
   const [selectedRouteIdx, setSelectedRouteIdx] = useState<number | null>(null)
 
@@ -108,15 +119,24 @@ export default function BusMap() {
         { id: 'A-03', apiPath: '/api/a03-location' },
         { id: 'A-75', apiPath: '/api/a75-location' },
       ]
-      lines.forEach(async (line) => {
-        try {
-          const res = await fetch(line.apiPath); const json = await res.json()
-          setBusData(prev => ({ ...prev, [line.id]: { loading: false, error: false, data: json.buses || [] } }))
-        } catch { setBusData(prev => ({ ...prev, [line.id]: { loading: false, error: true, data: [] } })) }
-      })
-      const kml: Record<string, any> = {}
+      
+      const fetchLines = async () => {
+        lines.forEach(async (line) => {
+          try {
+            const res = await fetch(line.apiPath); const json = await res.json()
+            setBusData(prev => ({ ...prev, [line.id]: { loading: false, error: false, data: json.buses || [] } }))
+          } catch { setBusData(prev => ({ ...prev, [line.id]: { loading: false, error: true, data: [] } })) }
+        })
+      }
+      
+      await fetchLines()
+      const interval = setInterval(fetchLines, 30000)
+      
+      const kml: Record<string, KmlRouteData> = {}
       await Promise.all(ALLOWED_LINES.map(async (id) => { kml[id] = await loadRouteKml(id) }))
       setKmlData(kml)
+      
+      return () => clearInterval(interval)
     }
     loadData()
   }, [])
@@ -135,7 +155,7 @@ export default function BusMap() {
           const transitSteps = route.legs[0].steps.filter(s => s.travel_mode === google.maps.TravelMode.TRANSIT)
           if (transitSteps.length !== 1) return false
           const lineName = transitSteps[0].transit?.line.short_name || transitSteps[0].transit?.line.name || ''
-          return ALLOWED_LINES.includes(lineName as any)
+          return ALLOWED_LINES.includes(lineName as AllowedLine)
         })
         setRoutes(directRoutes)
       })
@@ -187,14 +207,24 @@ export default function BusMap() {
         const aMarker = new MarkerClass({ map, position: coords[alightingIdx], content: aEl, title: `Bajas` })
         overlaysRef.current.push(aMarker)
 
+        // 4. Add Bus Markers
+        const buses = busData[lineName]?.data || []
+        buses.forEach((bus) => {
+          const busEl = document.createElement('div')
+          busEl.style.cssText = `width:20px;height:20px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;color:white;font-size:10px;font-weight:bold;`
+          busEl.innerText = '🚌'
+          const busMarker = new MarkerClass({ map, position: { lat: bus.latitude, lng: bus.longitude }, content: busEl, title: `Bus ${bus.id}` })
+          overlaysRef.current.push(busMarker)
+        })
+
         if (isSelected) {
           const bounds = new google.maps.LatLngBounds()
-          coords.slice(0, alightingIdx + 1).forEach((c: any) => bounds.extend(c))
+          coords.slice(0, alightingIdx + 1).forEach((c) => bounds.extend(c))
           map.fitBounds(bounds, 60)
         }
       }
     })
-  }, [map, routes, selectedRouteIdx, kmlData, MarkerClass])
+  }, [map, routes, selectedRouteIdx, kmlData, MarkerClass, busData])
 
   return (
     <div className={styles.mapContainer}>
