@@ -271,3 +271,36 @@
     width: 100%;
   }
 }
+
+.busMarker {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: white;
+  border: 3px solid var(--route-color);
+  color: var(--route-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  position: relative;
+}
+
+.busMarkerIcon {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+.busMarkerLineLabel {
+  position: absolute;
+  bottom: -18px;
+  font-size: 11px;
+  font-weight: bold;
+  background: var(--route-color);
+  color: white;
+  padding: 1px 6px;
+  border-radius: 4px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  white-space: nowrap;
+}
