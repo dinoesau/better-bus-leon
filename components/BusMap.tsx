@@ -11,6 +11,8 @@ const ALLOWED_LINES = ['A-03', 'A-75'] as const
 type AllowedLine = typeof ALLOWED_LINES[number]
 const ROUTE_COLORS: Record<string, string> = { 'A-03': '#E53E3E', 'A-75': '#2B6CB0' }
 
+let googleMapsOptionsSet = false
+
 interface Bus {
   id: string
   latitude: number
@@ -19,6 +21,55 @@ interface Bus {
 
 type KmlCoords = { lat: number; lng: number }[]
 type KmlRouteData = Record<string, KmlCoords | { lat: number; lng: number }>
+
+// --- Routes API types ---
+interface TransitLine {
+  shortName?: string
+  name?: string
+  vehicle?: {
+    name?: string
+    type?: string
+    icon?: { uri: string }
+  }
+}
+
+interface TransitStop {
+  name?: string
+  location?: {
+    lat?: number
+    lng?: number
+  }
+}
+
+interface TransitDetails {
+  transitLine?: TransitLine
+  departureStop?: TransitStop
+  arrivalStop?: TransitStop
+  departureTime?: { time?: Date }
+  arrivalTime?: { time?: Date }
+  numStops?: number
+}
+
+interface RouteLegStep {
+  travelMode: string
+  transitDetails?: TransitDetails
+  navigationInstruction?: {
+    instructions?: string
+  }
+}
+
+interface RouteLeg {
+  steps: RouteLegStep[]
+  duration?: { text: string }
+  distanceMeters?: number
+}
+
+interface TransitRoute {
+  legs: RouteLeg[]
+  durationMillis?: number
+  distanceMeters?: number
+  path?: google.maps.LatLngAltitude[]
+}
 
 // --- KML utilities ---
 function parseKmlCoords(text: string) {
@@ -84,14 +135,17 @@ export default function BusMap() {
   })
   
   const [kmlData, setKmlData] = useState<Record<string, KmlRouteData>>({})
-  const [routes, setRoutes] = useState<google.maps.DirectionsRoute[]>([])
+  const [routes, setRoutes] = useState<TransitRoute[]>([])
   const [selectedRouteIdx, setSelectedRouteIdx] = useState<number | null>(null)
 
   // Initialize Map
   useEffect(() => {
     let cancelled = false
     async function initMap() {
-      setOptions({ key: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!, v: 'weekly' })
+      if (!googleMapsOptionsSet) {
+        setOptions({ key: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!, v: 'weekly' })
+        googleMapsOptionsSet = true
+      }
       const { Map } = await importLibrary('maps') as google.maps.MapsLibrary
       const { AdvancedMarkerElement } = await importLibrary('marker') as google.maps.MarkerLibrary
       
@@ -144,20 +198,26 @@ export default function BusMap() {
   useEffect(() => {
     if (!map) return
     async function loadDirections() {
-      const { DirectionsService } = await importLibrary('routes') as google.maps.RoutesLibrary
-      new DirectionsService().route({
-        origin: ORIGIN, destination: DESTINATION, travelMode: google.maps.TravelMode.TRANSIT, provideRouteAlternatives: true,
-        transitOptions: { modes: [google.maps.TransitMode.BUS], routingPreference: google.maps.TransitRoutePreference.FEWER_TRANSFERS },
-      }, (result, status) => {
-        if (status !== 'OK' || !result) return
-        const directRoutes = result.routes.filter((route) => {
-          const transitSteps = route.legs[0].steps.filter(s => s.travel_mode === google.maps.TravelMode.TRANSIT)
-          if (transitSteps.length !== 1) return false
-          const lineName = transitSteps[0].transit?.line.short_name || transitSteps[0].transit?.line.name || ''
-          return ALLOWED_LINES.includes(lineName as AllowedLine)
-        })
-        setRoutes(directRoutes)
+      const routesLib = await importLibrary('routes') as unknown as { Route: { computeRoutes: (request: { origin: { lat: number; lng: number }; destination: { lat: number; lng: number }; travelMode: google.maps.TravelMode; computeAlternativeRoutes?: boolean; transitPreference?: string; fields: string[] }) => Promise<{ routes?: TransitRoute[] }> } }
+      const Route = routesLib.Route
+      const { routes: newRoutes } = await Route.computeRoutes({
+        origin: ORIGIN,
+        destination: DESTINATION,
+        travelMode: google.maps.TravelMode.TRANSIT,
+        computeAlternativeRoutes: true,
+        fields: ['*'],
       })
+      if (!newRoutes) return
+
+      const directRoutes = newRoutes.filter((route: TransitRoute) => {
+        const legs = route.legs || []
+        if (legs.length === 0) return false
+        const transitSteps = legs[0].steps?.filter((s: RouteLegStep) => s.travelMode === google.maps.TravelMode.TRANSIT) || []
+        if (transitSteps.length !== 1) return false
+        const lineName = transitSteps[0].transitDetails?.transitLine?.shortName || transitSteps[0].transitDetails?.transitLine?.name || ''
+        return ALLOWED_LINES.includes(lineName as AllowedLine)
+      })
+      setRoutes(directRoutes)
     }
     loadDirections()
   }, [map])
@@ -177,10 +237,24 @@ export default function BusMap() {
 
     routes.forEach((route, idx) => {
       const isSelected = selectedRouteIdx === idx
-      const transitStep = route.legs[0].steps.find(s => s.travel_mode === google.maps.TravelMode.TRANSIT)!
-      const lineName = transitStep.transit?.line.short_name || transitStep.transit?.line.name || ''
+      const legs = route.legs || []
+      if (legs.length === 0) return
+      
+      const transitSteps = legs[0].steps?.filter((s: RouteLegStep) => s.travelMode === google.maps.TravelMode.TRANSIT) || []
+      if (transitSteps.length === 0) return
+      
+      const transitStep = transitSteps[0]
+      const lineName = transitStep.transitDetails?.transitLine?.shortName || transitStep.transitDetails?.transitLine?.name || ''
       const color = ROUTE_COLORS[lineName] || '#555'
-      const direction = kmlData[lineName] ? detectDirection(kmlData[lineName], lineName, transitStep.transit!.departure_stop.location.lat(), transitStep.transit!.departure_stop.location.lng(), transitStep.transit!.arrival_stop.location.lat(), transitStep.transit!.arrival_stop.location.lng()) : null
+      
+      const departureStop = transitStep.transitDetails?.departureStop
+      const arrivalStop = transitStep.transitDetails?.arrivalStop
+      const boardingLat = departureStop?.location?.lat || 0
+      const boardingLng = departureStop?.location?.lng || 0
+      const alightingLat = arrivalStop?.location?.lat || 0
+      const alightingLng = arrivalStop?.location?.lng || 0
+      
+      const direction = kmlData[lineName] ? detectDirection(kmlData[lineName], lineName, boardingLat, boardingLng, alightingLat, alightingLng) : null
       
       if (direction) {
         const { coords, boardingIdx, alightingIdx } = direction
@@ -232,7 +306,7 @@ export default function BusMap() {
         <div className={styles.routesList}>
           {routes.map((route, idx) => (
              <div key={idx} className={`${styles.routeCard} ${selectedRouteIdx === idx ? styles.selected : ''}`} onClick={() => setSelectedRouteIdx(idx)}>
-               Route {idx + 1} ({route.legs[0].duration?.text})
+               Route {idx + 1} ({route.durationMillis ? `${Math.round(route.durationMillis / 60000)} min` : 'N/A'})
              </div>
            ))}
         </div>
