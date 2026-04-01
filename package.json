@@ -1,6 +1,7 @@
 {
   "name": "better-bus-leon",
   "version": "0.1.0",
+  "author": "Esau Martinez <contact@esau.com.mx> (https://github.com/dinoesau)",
   "private": true,
   "scripts": {
     "dev": "next dev --experimental-https",
