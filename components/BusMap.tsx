@@ -202,7 +202,7 @@ export default function BusMap() {
         // 4. Add Bus Markers
         const buses = busData[lineName]?.data || []
         buses.forEach((bus) => {
-          const busMarker = new MarkerClass({ map, position: { lat: bus.latitude, lng: bus.longitude }, content: createBusMarker(lineName, color), title: `Bus ${bus.id}` })
+          const busMarker = new MarkerClass({ map, position: { lat: bus.latitude, lng: bus.longitude }, content: createBusMarker(lineName, color, { busMarker: styles.busMarker, busMarkerIcon: styles.busMarkerIcon, busMarkerLineLabel: styles.busMarkerLineLabel }), title: `Bus ${bus.id}` })
           overlaysRef.current.push(busMarker)
         })
 

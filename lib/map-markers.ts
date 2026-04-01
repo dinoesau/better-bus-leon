@@ -31,13 +31,19 @@ export function createStopMarker(color: string): HTMLDivElement {
   return el
 }
 
-export function createBusMarker(lineName: string, color: string): HTMLDivElement {
+interface BusMarkerClassNames {
+  busMarker: string
+  busMarkerIcon: string
+  busMarkerLineLabel: string
+}
+
+export function createBusMarker(lineName: string, color: string, classNames: BusMarkerClassNames): HTMLDivElement {
   const el = document.createElement('div')
-  el.className = 'busMarker'
+  el.className = classNames.busMarker
   el.style.setProperty('--route-color', color)
 
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
-  svg.setAttribute('class', 'busMarkerIcon')
+  svg.setAttribute('class', classNames.busMarkerIcon)
   svg.setAttribute('viewBox', '0 0 24 24')
 
   const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
@@ -46,7 +52,7 @@ export function createBusMarker(lineName: string, color: string): HTMLDivElement
   el.appendChild(svg)
 
   const label = document.createElement('div')
-  label.className = 'busMarkerLineLabel'
+  label.className = classNames.busMarkerLineLabel
   label.textContent = lineName
   el.appendChild(label)
 
