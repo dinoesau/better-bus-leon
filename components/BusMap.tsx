@@ -169,8 +169,8 @@ export default function BusMap() {
   useEffect(() => {
     async function loadData() {
       const lines = [
-        { id: 'A-03', apiPath: '/api/a03-location' },
-        { id: 'A-75', apiPath: '/api/a75-location' },
+        { id: 'A-03', apiPath: '/api/location?ruta=A-03' },
+        { id: 'A-75', apiPath: '/api/location?ruta=A-75' },
       ]
       
       const fetchLines = async () => {
