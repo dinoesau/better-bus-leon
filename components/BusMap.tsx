@@ -183,7 +183,7 @@ export default function BusMap() {
       }
       
       await fetchLines()
-      const interval = setInterval(fetchLines, 30000)
+      const interval = setInterval(fetchLines, 20000)
       
       const kml: Record<string, KmlRouteData> = {}
       await Promise.all(ALLOWED_LINES.map(async (id) => { kml[id] = await loadRouteKml(id) }))
