@@ -2,6 +2,7 @@ import { ROUTE_API_PARAMS } from '@/lib/route-config';
 import { parseCustomPayload, ParsedResult } from '@/lib/parseCustomPayload';
 import { ValidRouteId } from '../domain/bus-route';
 import { Result } from '../core/result';
+import { env } from '../core/env';
 
 /**
  * Core Service: Fetches bus locations for a trusted Route ID.
@@ -9,14 +10,7 @@ import { Result } from '../core/result';
  */
 export async function fetchBusLocations(routeId: ValidRouteId): Promise<Result<ParsedResult['namedFilteredData'], Error>> {
   const parametro = ROUTE_API_PARAMS[routeId];
-  const apiBase = process.env.BUSES_API_BASE;
-
-  // ASSERTION: System invariant. If this is missing, the server is misconfigured.
-  if (!apiBase) {
-    throw new Error('Server configuration error: BUSES_API_BASE not set');
-  }
-
-  const apiUrl = `${apiBase}?parametro=${parametro}`;
+  const apiUrl = `${env.BUSES_API_BASE}?parametro=${parametro}`;
 
   try {
     const res = await fetch(apiUrl, {
