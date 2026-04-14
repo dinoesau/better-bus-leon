@@ -1,0 +1,367 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>L-04</name>
+    <description>Terminal San Juan Bosco - Terminal Delta</description>
+    <Style id="icon-1899-000000-normal">
+      <IconStyle>
+        <color>ff000000</color>
+        <scale>1</scale>
+        <Icon>
+          <href>https://www.gstatic.com/mapspro/images/stock/503-wht-blank_maps.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+    </Style>
+    <Style id="icon-1899-000000-highlight">
+      <IconStyle>
+        <color>ff000000</color>
+        <scale>1</scale>
+        <Icon>
+          <href>https://www.gstatic.com/mapspro/images/stock/503-wht-blank_maps.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>1</scale>
+      </LabelStyle>
+    </Style>
+    <StyleMap id="icon-1899-000000">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-1899-000000-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-1899-000000-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="icon-1899-BDBDBD-normal">
+      <IconStyle>
+        <color>ffbdbdbd</color>
+        <scale>1</scale>
+        <Icon>
+          <href>https://www.gstatic.com/mapspro/images/stock/503-wht-blank_maps.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+    </Style>
+    <Style id="icon-1899-BDBDBD-highlight">
+      <IconStyle>
+        <color>ffbdbdbd</color>
+        <scale>1</scale>
+        <Icon>
+          <href>https://www.gstatic.com/mapspro/images/stock/503-wht-blank_maps.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>1</scale>
+      </LabelStyle>
+    </Style>
+    <StyleMap id="icon-1899-BDBDBD">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-1899-BDBDBD-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-1899-BDBDBD-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="line-097138-3170-normal">
+      <LineStyle>
+        <color>ff387109</color>
+        <width>3.17</width>
+      </LineStyle>
+    </Style>
+    <Style id="line-097138-3170-highlight">
+      <LineStyle>
+        <color>ff387109</color>
+        <width>4.755</width>
+      </LineStyle>
+    </Style>
+    <StyleMap id="line-097138-3170">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#line-097138-3170-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#line-097138-3170-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="line-87CEAC-3557-normal">
+      <LineStyle>
+        <color>ffacce87</color>
+        <width>3.557</width>
+      </LineStyle>
+    </Style>
+    <Style id="line-87CEAC-3557-highlight">
+      <LineStyle>
+        <color>ffacce87</color>
+        <width>5.3355</width>
+      </LineStyle>
+    </Style>
+    <StyleMap id="line-87CEAC-3557">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#line-87CEAC-3557-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#line-87CEAC-3557-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Folder>
+      <name>L-04</name>
+      <Placemark>
+        <name>Inicio</name>
+        <description><![CDATA[descripción: <br>Empresa: <br>Tipo: <br>Origen: ]]></description>
+        <styleUrl>#icon-1899-BDBDBD</styleUrl>
+        <ExtendedData>
+          <Data name="descripción">
+            <value/>
+          </Data>
+          <Data name="Empresa">
+            <value/>
+          </Data>
+          <Data name="Tipo">
+            <value/>
+          </Data>
+          <Data name="Origen">
+            <value/>
+          </Data>
+        </ExtendedData>
+        <Point>
+          <coordinates>
+            -101.71618,21.132393,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>L-04-ida</name>
+        <description><![CDATA[descripción: <br>Empresa: Red Optibus Oriente - Red Integral<br>Tipo: Troncal<br>Origen: Terminal San Juan Bosco - Terminal Delta]]></description>
+        <styleUrl>#line-097138-3170</styleUrl>
+        <ExtendedData>
+          <Data name="descripción">
+            <value/>
+          </Data>
+          <Data name="Empresa">
+            <value>Red Optibus Oriente - Red Integral</value>
+          </Data>
+          <Data name="Tipo">
+            <value>Troncal</value>
+          </Data>
+          <Data name="Origen">
+            <value>Terminal San Juan Bosco - Terminal Delta</value>
+          </Data>
+        </ExtendedData>
+        <LineString>
+          <tessellate>1</tessellate>
+          <coordinates>
+            -101.71618,21.132393,0
+            -101.716317,21.131806,0
+            -101.71627,21.13168,0
+            -101.715577,21.131479,0
+            -101.715401,21.131557,0
+            -101.715362,21.131699,0
+            -101.715596,21.13313,0
+            -101.715441,21.133273,0
+            -101.715095,21.133163,0
+            -101.714604,21.133051,0
+            -101.711941,21.1325,0
+            -101.710937,21.132307,0
+            -101.708436,21.131779,0
+            -101.707378,21.13156,0
+            -101.705669,21.131224,0
+            -101.705292,21.131121,0
+            -101.704588,21.13098,0
+            -101.703941,21.130876,0
+            -101.703568,21.130877,0
+            -101.703166,21.130911,0
+            -101.702695,21.131027,0
+            -101.701047,21.131712,0
+            -101.70031,21.132091,0
+            -101.699714,21.132504,0
+            -101.698641,21.133439,0
+            -101.698318,21.133689,0
+            -101.698055,21.133851,0
+            -101.697814,21.13393,0
+            -101.697315,21.134005,0
+            -101.696842,21.133946,0
+            -101.695473,21.133471,0
+            -101.691343,21.13205,0
+            -101.688308,21.131051,0
+            -101.688022,21.13066,0
+            -101.687508,21.129073,0
+            -101.687219,21.128232,0
+            -101.686971,21.127846,0
+            -101.686644,21.127478,0
+            -101.686324,21.127223,0
+            -101.685879,21.126972,0
+            -101.685238,21.126718,0
+            -101.668672,21.120347,0
+            -101.667497,21.119957,0
+            -101.66409,21.118943,0
+            -101.660455,21.117842,0
+            -101.659429,21.117493,0
+            -101.65703,21.116501,0
+            -101.653648,21.11506,0
+            -101.6525,21.114426,0
+            -101.649956,21.113018,0
+            -101.649225,21.112472,0
+            -101.647166,21.110921,0
+            -101.637231,21.103353,0
+            -101.634239,21.101088,0
+            -101.632785,21.099933,0
+            -101.626634,21.095108,0
+            -101.623662,21.092644,0
+            -101.620688,21.090241,0
+            -101.620436,21.090222,0
+            -101.620243,21.090295,0
+            -101.619054,21.091024,0
+            -101.61864,21.091405,0
+            -101.618328,21.091868,0
+            -101.616812,21.094687,0
+            -101.616867,21.094872,0
+            -101.61711,21.095026,0
+            -101.617416,21.095312,0
+            -101.618288,21.095742,0
+          </coordinates>
+        </LineString>
+      </Placemark>
+      <Placemark>
+        <name>L-04-regreso</name>
+        <description><![CDATA[descripción: <br>Empresa: Red Optibus Oriente - Red Integral<br>Tipo: Troncal<br>Origen: Terminal Delta - Terminal San Juan Bosco]]></description>
+        <styleUrl>#line-87CEAC-3557</styleUrl>
+        <ExtendedData>
+          <Data name="descripción">
+            <value/>
+          </Data>
+          <Data name="Empresa">
+            <value>Red Optibus Oriente - Red Integral</value>
+          </Data>
+          <Data name="Tipo">
+            <value>Troncal</value>
+          </Data>
+          <Data name="Origen">
+            <value>Terminal Delta - Terminal San Juan Bosco</value>
+          </Data>
+        </ExtendedData>
+        <LineString>
+          <tessellate>1</tessellate>
+          <coordinates>
+            -101.618203,21.095085,0
+            -101.617723,21.094842,0
+            -101.617245,21.094857,0
+            -101.617036,21.094765,0
+            -101.617005,21.094658,0
+            -101.617741,21.093346,0
+            -101.61855,21.091851,0
+            -101.618847,21.091478,0
+            -101.619359,21.091054,0
+            -101.620096,21.090586,0
+            -101.620615,21.090351,0
+            -101.620842,21.090427,0
+            -101.622765,21.091904,0
+            -101.623505,21.092583,0
+            -101.62847,21.096609,0
+            -101.630317,21.098095,0
+            -101.630716,21.098441,0
+            -101.634196,21.101176,0
+            -101.635117,21.10186,0
+            -101.637498,21.103676,0
+            -101.649531,21.112832,0
+            -101.650216,21.113264,0
+            -101.650707,21.113547,0
+            -101.652797,21.114703,0
+            -101.653872,21.115262,0
+            -101.655208,21.115847,0
+            -101.656814,21.116501,0
+            -101.657808,21.116919,0
+            -101.659317,21.117544,0
+            -101.667472,21.120015,0
+            -101.669251,21.120636,0
+            -101.685448,21.126855,0
+            -101.686129,21.127172,0
+            -101.686622,21.127539,0
+            -101.687039,21.128043,0
+            -101.687217,21.128368,0
+            -101.687379,21.128914,0
+            -101.687943,21.13057,0
+            -101.688003,21.130939,0
+            -101.688014,21.131448,0
+            -101.687963,21.131758,0
+            -101.688158,21.131968,0
+            -101.69003,21.13319,0
+            -101.690316,21.133254,0
+            -101.69054,21.133193,0
+            -101.690619,21.132917,0
+            -101.690651,21.131939,0
+            -101.690737,21.131871,0
+            -101.695168,21.133395,0
+            -101.696798,21.133955,0
+            -101.697075,21.134015,0
+            -101.697542,21.134011,0
+            -101.698025,21.133882,0
+            -101.698352,21.133702,0
+            -101.699932,21.132396,0
+            -101.700485,21.132021,0
+            -101.700893,21.131788,0
+            -101.702323,21.131195,0
+            -101.702845,21.131027,0
+            -101.703256,21.130931,0
+            -101.70377,21.130902,0
+            -101.703951,21.130906,0
+            -101.704516,21.131039,0
+            -101.705486,21.131235,0
+            -101.705853,21.131281,0
+            -101.707723,21.1317,0
+            -101.709029,21.131972,0
+            -101.709303,21.131993,0
+            -101.71159,21.132492,0
+            -101.712666,21.1327,0
+            -101.712934,21.13274,0
+            -101.715148,21.133204,0
+            -101.715452,21.133303,0
+            -101.715608,21.133305,0
+            -101.715767,21.133247,0
+            -101.715999,21.133023,0
+            -101.716168,21.132436,0
+          </coordinates>
+        </LineString>
+      </Placemark>
+      <Placemark>
+        <name>Termina</name>
+        <description><![CDATA[descripción: <br>Empresa: <br>Tipo: <br>Origen: ]]></description>
+        <styleUrl>#icon-1899-000000</styleUrl>
+        <ExtendedData>
+          <Data name="descripción">
+            <value/>
+          </Data>
+          <Data name="Empresa">
+            <value/>
+          </Data>
+          <Data name="Tipo">
+            <value/>
+          </Data>
+          <Data name="Origen">
+            <value/>
+          </Data>
+        </ExtendedData>
+        <Point>
+          <coordinates>
+            -101.6185637,21.0955648,0
+          </coordinates>
+        </Point>
+      </Placemark>
+    </Folder>
+  </Document>
+</kml>

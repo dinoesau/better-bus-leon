@@ -67,6 +67,16 @@ export const routes: Record<string, BusRoute> = {
     inicio: { lat: 21.1323685, lng: -101.716218 },
     termina: { lat: 21.1499699, lng: -101.6751369 },
   },
+  "L-04": {
+    name: "Ruta L-04",
+    color: "#097138",
+    description: "Terminal San Juan Bosco — Terminal Delta",
+    empresa: "Red Optibus Oriente - Red Integral",
+    tipo: "Troncal",
+    // KML source: /public/data/L-04.kml
+    inicio: { lat: 21.132393, lng: -101.71618 },
+    termina: { lat: 21.0955648, lng: -101.6185637 },
+  },
 };
 
 export const mapCenter = { lat: 21.1200, lng: -101.7210 };
