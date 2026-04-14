@@ -156,9 +156,6 @@ export default function BusMap() {
         center: { lat: (ORIGIN.lat + DESTINATION.lat) / 2, lng: (ORIGIN.lng + DESTINATION.lng) / 2 },
         zoom: 14, mapId: 'bus-routes-map', mapTypeControl: false, streetViewControl: false, fullscreenControl: true,
       })
-      // Markers
-      new AdvancedMarkerElement({ map: mapInstance, position: ORIGIN, content: createOriginMarker(), title: 'Tu origen' })
-      new AdvancedMarkerElement({ map: mapInstance, position: DESTINATION, content: createDestinationMarker(), title: 'Tu destino' })
       setMap(mapInstance)
     }
     initMap()
@@ -247,33 +244,19 @@ export default function BusMap() {
       const lineName = transitStep.transitDetails?.transitLine?.shortName || transitStep.transitDetails?.transitLine?.name || ''
       const color = ROUTE_COLORS[lineName] || '#555'
       
-      const departureStop = transitStep.transitDetails?.departureStop
-      const arrivalStop = transitStep.transitDetails?.arrivalStop
-      const boardingLat = departureStop?.location?.lat || 0
-      const boardingLng = departureStop?.location?.lng || 0
-      const alightingLat = arrivalStop?.location?.lat || 0
-      const alightingLng = arrivalStop?.location?.lng || 0
-      
-      const direction = kmlData[lineName] ? detectDirection(kmlData[lineName], lineName, boardingLat, boardingLng, alightingLat, alightingLng) : null
-      
-      if (direction) {
-        const { coords, boardingIdx, alightingIdx } = direction
-        
-        // 1. Draw full route (low opacity)
-        const fullRoutePoly = drawPolyline(map, coords, color, 4, 0.2, 5)
-        overlaysRef.current.push(fullRoutePoly)
-        
-        // 2. Draw active segment (high opacity/thicker)
-        const activePoly = drawPolyline(map, coords.slice(boardingIdx, alightingIdx + 1), color, 6, 1, 10)
-        overlaysRef.current.push(activePoly)
+      if (kmlData[lineName]) {
+        // 1. Draw all segments of this line (ida, regreso, etc.)
+        Object.entries(kmlData[lineName]).forEach(([name, data]) => {
+          if (Array.isArray(data)) {
+            const isRegreso = name.toLowerCase().includes('regreso')
+            const opacity = isRegreso ? 0.3 : 1.0
+            const weight = isRegreso ? 4 : 6
+            const poly = drawPolyline(map, data as KmlCoords, color, weight, opacity, 10)
+            overlaysRef.current.push(poly)
+          }
+        })
 
-        // 3. Add stop markers
-        const bMarker = new MarkerClass({ map, position: coords[boardingIdx], content: createStopMarker(color), title: `Abordas` })
-        overlaysRef.current.push(bMarker)
-        const aMarker = new MarkerClass({ map, position: coords[alightingIdx], content: createStopMarker(color), title: `Bajas` })
-        overlaysRef.current.push(aMarker)
-
-        // 4. Add Bus Markers
+        // 2. Add Bus Markers
         const buses = busData[lineName]?.data || []
         buses.forEach((bus) => {
           const busMarker = new MarkerClass({ map, position: { lat: bus.latitude, lng: bus.longitude }, content: createBusMarker(lineName, color, { busMarker: styles.busMarker, busMarkerIcon: styles.busMarkerIcon, busMarkerLineLabel: styles.busMarkerLineLabel }), title: `Bus ${bus.id}` })
@@ -282,7 +265,9 @@ export default function BusMap() {
 
         if (isSelected) {
           const bounds = new google.maps.LatLngBounds()
-          coords.slice(0, alightingIdx + 1).forEach((c) => bounds.extend(c))
+          Object.values(kmlData[lineName]).forEach(val => {
+            if (Array.isArray(val)) val.forEach(c => bounds.extend(c))
+          })
           map.fitBounds(bounds, 60)
         }
       }
