@@ -3,6 +3,7 @@ import { parseCustomPayload, ParsedResult } from '@/lib/parseCustomPayload';
 import { ValidRouteId } from '../domain/bus-route';
 import { Result } from '../core/result';
 import { env } from '../core/env';
+import { assert } from '../core/assert';
 
 /**
  * Core Service: Fetches bus locations for a trusted Route ID.
@@ -10,6 +11,11 @@ import { env } from '../core/env';
  */
 export async function fetchBusLocations(routeId: ValidRouteId): Promise<Result<ParsedResult['namedFilteredData'], Error>> {
   const parametro = ROUTE_API_PARAMS[routeId];
+  
+  // Rule 4: Offensive Assertion
+  // Since routeId is branded, missing config is a system bug.
+  assert(parametro, `Critical Config Error: No API parameter mapping found for route ${routeId}`);
+
   const apiUrl = `${env.BUSES_API_BASE}?parametro=${parametro}`;
 
   try {
@@ -29,9 +35,23 @@ export async function fetchBusLocations(routeId: ValidRouteId): Promise<Result<P
     }
 
     const base64 = (await res.text()).trim();
-    const parsed = parseCustomPayload(base64);
+
+    // Rule 1: Validation at the Edge
+    if (!base64) {
+      return { 
+        ok: false, 
+        error: new Error('Empty response from upstream API') 
+      };
+    }
+
+    // Rule 3: Parse, Don't Validate
+    const parseResult = parseCustomPayload(base64);
     
-    return { ok: true, value: parsed.namedFilteredData };
+    if (!parseResult.ok) {
+      return parseResult;
+    }
+    
+    return { ok: true, value: parseResult.value.namedFilteredData };
   } catch (err) {
     return { 
       ok: false, 

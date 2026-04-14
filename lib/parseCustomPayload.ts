@@ -1,66 +1,107 @@
+import { z } from 'zod';
+import { Result } from './core/result';
+
+/**
+ * Intelligent Schema: Parses a raw string row into a trusted BusLocation object.
+ * Rule 3: "Parse, Don't Validate" - We transform the index-based array 
+ * into a named object and perform coordinate math at the boundary.
+ */
+const BusLocationSchema = z.array(z.string())
+  .min(22, { message: "Row has insufficient columns" })
+  .transform((row) => ({
+    id: row[11],
+    // Coordinates are stored as integers (e.g., 2109986) in the upstream API
+    latitude: parseFloat(row[3]) / 100000,
+    longitude: -(parseFloat(row[4]) / 100000),
+    hora: row[21],
+  }))
+  .pipe(
+    z.object({
+      id: z.string().min(1, "Missing bus ID"),
+      latitude: z.number().min(20).max(22, "Latitude out of bounds for León"),
+      longitude: z.number().min(-102).max(-100, "Longitude out of bounds for León"),
+      hora: z.string().regex(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/, "Invalid date format"),
+    })
+  );
+
+export type BusLocation = z.infer<typeof BusLocationSchema>;
+
 export interface ParsedResult {
   pagination: string;
   data: string[][];
   filteredData: (string | number)[][];
-  namedFilteredData: {
-    id: string;
-    latitude: number;
-    longitude: number;
-    hora: string;
-  }[];
+  namedFilteredData: BusLocation[];
 }
-
 
 function base64ToString(base64: string) {
   return Buffer.from(base64, 'base64').toString('utf-8');
 }
 
-export function parseCustomPayload(dataString: string): ParsedResult {
-  const decodedString = base64ToString(dataString);
+export function parseCustomPayload(dataString: string): Result<ParsedResult, Error> {
+  if (!dataString) {
+    return { ok: false, error: new Error('Empty payload') };
+  }
 
-  const rawRows = decodedString.split('|');
+  try {
+    const decodedString = base64ToString(dataString);
 
-  const footerRaw = rawRows.pop()!;
-  const paginationData = footerRaw.replace('&', '').trim();
+    if (!decodedString.includes('|')) {
+      return { ok: false, error: new Error('Invalid payload format: missing row delimiter') };
+    }
 
-  rawRows[0] = rawRows[0].replace(/^\$\d{4}/, '');
+    const rawRows = decodedString.split('|');
 
-  let parsedRows: (string | number)[][] = rawRows.map(row => row.split('#'));
+    const footerRaw = rawRows.pop();
+    if (!footerRaw) {
+      return { ok: false, error: new Error('Invalid payload format: missing footer') };
+    }
+    const paginationData = footerRaw.replace('&', '').trim();
 
-  // parse row index 3 and 4 to longitude and latitude
-  // 3 = latitude, 4 = longitude
-  // example input '2109986' should be parsed to 21.09986
-  // example input '10173168' should be parsed to -101.73168
-  parsedRows = parsedRows.map(row => {
-    row[3] = parseFloat(row[3] as string) / 100000;
-    row[4] = -(parseFloat(row[4] as string) / 100000);
-    return row;
-  });
+    if (rawRows.length === 0) {
+      return { ok: false, error: new Error('Invalid payload format: no data rows') };
+    }
 
-  // Filter specific columns
-  const filteredData = parsedRows.map(row => {
-    return [
-      row[0], row[1], row[3], row[4],
-      row[10], row[11],
-      row[16], row[17], row[18],
-      row[19], row[20], row[21], row[22]
-    ];
-  });
+    // Remove the initial metadata (e.g., $3333) from the first row
+    rawRows[0] = rawRows[0].replace(/^\$\d{4}/, '');
 
-  // add names to the filtered data instead of column index to only some of the columns
-  const namedFilteredData = filteredData.map(row => {
+    const parsedRows = rawRows.map(row => row.split('#'));
+
+    // Intelligent Parsing: Process the entire collection through Zod
+    const result = z.array(BusLocationSchema).safeParse(parsedRows);
+
+    if (!result.success) {
+      // Rule 2: Treat Errors as Values. We map Zod errors to a clear Result.
+      const firstError = result.error.issues[0];
+      const path = firstError.path.join('.');
+      return { 
+        ok: false, 
+        error: new Error(`Parsing failure at [${path}]: ${firstError.message}`) 
+      };
+    }
+
+    const namedFilteredData = result.data;
+
+    /**
+     * Legacy mappings kept for compatibility if needed elsewhere, 
+     * but namedFilteredData is now the primary trusted source.
+     */
+    const filteredData = namedFilteredData.map(bus => [
+      bus.id, bus.latitude, bus.longitude, bus.hora
+    ]);
+
     return {
-      id: row[5] as string,
-      latitude: row[2] as number,
-      longitude: row[3] as number,
-      hora: row[11] as string,
+      ok: true,
+      value: {
+        pagination: paginationData,
+        data: parsedRows,
+        filteredData,
+        namedFilteredData
+      }
     };
-  });
-
-  return {
-    pagination: paginationData,
-    data: parsedRows as string[][],
-    filteredData,
-    namedFilteredData
-  };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err : new Error(String(err))
+    };
+  }
 }
