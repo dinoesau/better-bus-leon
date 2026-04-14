@@ -1,15 +1,16 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useMemo } from 'react'
 import { setOptions, importLibrary } from '@googlemaps/js-api-loader'
 import styles from './BusMap.module.css'
 import { createBusMarker } from '../lib/map-markers'
+import { routes as routeMetadata } from '../data/routes'
+import { VALID_ROUTE_IDS } from '../lib/route-config'
 
-const ORIGIN = { lat: 21.123232, lng: -101.731127 }
-const DESTINATION = { lat: 21.13129, lng: -101.71705 }
-const ALLOWED_LINES = ['A-03', 'A-75'] as const
-type AllowedLine = typeof ALLOWED_LINES[number]
-const ROUTE_COLORS: Record<string, string> = { 'A-03': '#E53E3E', 'A-75': '#2B6CB0' }
+const STORAGE_KEY = 'preferred-bus-routes-v2' // Versioned key for multi-select
+const OLD_STORAGE_KEY = 'preferred-bus-route'
+const DEFAULT_ROUTES = ['A-03']
+const MAX_SELECTION = 5
 
 let googleMapsOptionsSet = false
 
@@ -19,57 +20,14 @@ interface Bus {
   longitude: number
 }
 
+interface RouteBusState {
+  loading: boolean
+  error: boolean
+  data: Bus[]
+}
+
 type KmlCoords = { lat: number; lng: number }[]
 type KmlRouteData = Record<string, KmlCoords | { lat: number; lng: number }>
-
-// --- Routes API types ---
-interface TransitLine {
-  shortName?: string
-  name?: string
-  vehicle?: {
-    name?: string
-    type?: string
-    icon?: { uri: string }
-  }
-}
-
-interface TransitStop {
-  name?: string
-  location?: {
-    lat?: number
-    lng?: number
-  }
-}
-
-interface TransitDetails {
-  transitLine?: TransitLine
-  departureStop?: TransitStop
-  arrivalStop?: TransitStop
-  departureTime?: { time?: Date }
-  arrivalTime?: { time?: Date }
-  numStops?: number
-}
-
-interface RouteLegStep {
-  travelMode: string
-  transitDetails?: TransitDetails
-  navigationInstruction?: {
-    instructions?: string
-  }
-}
-
-interface RouteLeg {
-  steps: RouteLegStep[]
-  duration?: { text: string }
-  distanceMeters?: number
-}
-
-interface TransitRoute {
-  legs: RouteLeg[]
-  durationMillis?: number
-  distanceMeters?: number
-  path?: google.maps.LatLngAltitude[]
-}
 
 // --- KML utilities ---
 function parseKmlCoords(text: string) {
@@ -81,6 +39,7 @@ function parseKmlCoords(text: string) {
 
 async function loadRouteKml(routeId: string): Promise<KmlRouteData> {
   const res = await fetch(`/data/${routeId}.kml`)
+  if (!res.ok) return {}
   const text = await res.text()
   const doc = new DOMParser().parseFromString(text, 'application/xml')
   const out: KmlRouteData = {}
@@ -105,20 +64,68 @@ export default function BusMap() {
   const mapRef = useRef<HTMLDivElement>(null)
   const [map, setMap] = useState<google.maps.Map | null>(null)
   const [MarkerClass, setMarkerClass] = useState<typeof google.maps.marker.AdvancedMarkerElement | null>(null)
-  const overlaysRef = useRef<(google.maps.Polyline | google.maps.marker.AdvancedMarkerElement)[]>([])
   
-  const [busData, setBusData] = useState<Record<string, { loading: boolean, error: boolean, data: Bus[] }>>({
-    'A-03': { loading: true, error: false, data: [] },
-    'A-75': { loading: true, error: false, data: [] },
-  })
+  // Refs for managing overlays per route
+  const overlaysRef = useRef<Record<string, (google.maps.Polyline | google.maps.marker.AdvancedMarkerElement)[]>>({})
+  const endpointMarkersRef = useRef<Record<string, google.maps.marker.AdvancedMarkerElement[]>>({})
   
-  const [kmlData, setKmlData] = useState<Record<string, KmlRouteData>>({})
-  const [routes, setRoutes] = useState<TransitRoute[]>([])
-  const [selectedRouteIdx, setSelectedRouteIdx] = useState<number | null>(null)
+  // State for selection
+  const [selectedRouteIds, setSelectedRouteIds] = useState<string[]>([])
+  const [searchQuery, setSearchQuery] = useState('')
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [isTrayExpanded, setIsTrayExpanded] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [showToast, setShowToast] = useState(false)
+  
+  // Real-time data maps
+  const [busDataMap, setBusDataMap] = useState<Record<string, RouteBusState>>({})
+  const [kmlDataMap, setKmlDataMap] = useState<Record<string, KmlRouteData>>({})
 
-  // Initialize Map
+  // 1. Initialization: Migration & Loading
   useEffect(() => {
-    let cancelled = false
+    const savedV2 = localStorage.getItem(STORAGE_KEY)
+    if (savedV2) {
+      try {
+        const parsed = JSON.parse(savedV2)
+        if (Array.isArray(parsed)) {
+          setSelectedRouteIds(parsed.filter(id => VALID_ROUTE_IDS.includes(id)).slice(0, MAX_SELECTION))
+          return
+        }
+      } catch (e) { console.error('Failed to parse saved routes', e) }
+    }
+    
+    // Migration from single-select
+    const savedV1 = localStorage.getItem(OLD_STORAGE_KEY)
+    if (savedV1 && VALID_ROUTE_IDS.includes(savedV1)) {
+      setSelectedRouteIds([savedV1])
+      localStorage.removeItem(OLD_STORAGE_KEY)
+    } else {
+      setSelectedRouteIds(DEFAULT_ROUTES)
+    }
+  }, [])
+
+  // 2. Search Logic
+  const filteredRoutes = useMemo(() => {
+    const query = searchQuery.toLowerCase()
+    return VALID_ROUTE_IDS.filter(id => 
+      id.toLowerCase().includes(query) || 
+      routeMetadata[id]?.name.toLowerCase().includes(query) ||
+      routeMetadata[id]?.description.toLowerCase().includes(query)
+    )
+  }, [searchQuery])
+
+  const toggleRoute = (id: string) => {
+    setSelectedRouteIds(prev => {
+      if (prev.includes(id)) return prev.filter(r => r !== id)
+      if (prev.length >= MAX_SELECTION) return prev
+      return [...prev, id]
+    })
+    setSearchQuery('')
+    setIsSearchOpen(false)
+  }
+
+  // 3. Initialize Map
+  useEffect(() => {
     async function initMap() {
       if (!googleMapsOptionsSet) {
         setOptions({ key: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!, v: 'weekly' })
@@ -126,173 +133,288 @@ export default function BusMap() {
       }
       const { Map } = await importLibrary('maps') as google.maps.MapsLibrary
       const { AdvancedMarkerElement } = await importLibrary('marker') as google.maps.MarkerLibrary
-      
       setMarkerClass(() => AdvancedMarkerElement)
       
-      if (cancelled || !mapRef.current) return
+      if (!mapRef.current) return
       const mapInstance = new Map(mapRef.current, {
-        center: { lat: (ORIGIN.lat + DESTINATION.lat) / 2, lng: (ORIGIN.lng + DESTINATION.lng) / 2 },
-        zoom: 14, mapId: 'bus-routes-map', mapTypeControl: false, streetViewControl: false, fullscreenControl: true,
+        center: { lat: 21.1200, lng: -101.7210 },
+        zoom: 13, 
+        mapId: 'bus-routes-map', 
+        mapTypeControl: false, 
+        streetViewControl: false, 
+        fullscreenControl: false,
+        rotateControl: false,
+        scaleControl: false,
       })
       setMap(mapInstance)
     }
     initMap()
-    return () => { cancelled = true }
   }, [])
 
-  // Load Bus Locations and KML
+  // 4. Data Polling Registry
   useEffect(() => {
-    async function loadData() {
-      const lines = [
-        { id: 'A-03', apiPath: '/api/location?ruta=A-03' },
-        { id: 'A-75', apiPath: '/api/location?ruta=A-75' },
-      ]
-      
-      const fetchLines = async () => {
-        lines.forEach(async (line) => {
-          try {
-            const res = await fetch(line.apiPath); const json = await res.json()
-            setBusData(prev => ({ ...prev, [line.id]: { loading: false, error: false, data: json.buses || [] } }))
-          } catch { setBusData(prev => ({ ...prev, [line.id]: { loading: false, error: true, data: [] } })) }
+    const intervals: Record<string, NodeJS.Timeout> = {}
+
+    selectedRouteIds.forEach(id => {
+      // Load KML if not cached
+      if (!kmlDataMap[id]) {
+        loadRouteKml(id).then(kml => {
+          setKmlDataMap(prev => ({ ...prev, [id]: kml }))
         })
       }
-      
-      await fetchLines()
-      const interval = setInterval(fetchLines, 20000)
-      
-      const kml: Record<string, KmlRouteData> = {}
-      await Promise.all(ALLOWED_LINES.map(async (id) => { kml[id] = await loadRouteKml(id) }))
-      setKmlData(kml)
-      
-      return () => clearInterval(interval)
-    }
-    loadData()
-  }, [])
 
-  // Load Directions
-  useEffect(() => {
-    if (!map) return
-    async function loadDirections() {
-      const routesLib = await importLibrary('routes') as unknown as { Route: { computeRoutes: (request: { origin: { lat: number; lng: number }; destination: { lat: number; lng: number }; travelMode: google.maps.TravelMode; computeAlternativeRoutes?: boolean; transitPreference?: string; fields: string[] }) => Promise<{ routes?: TransitRoute[] }> } }
-      const Route = routesLib.Route
-      const { routes: newRoutes } = await Route.computeRoutes({
-        origin: ORIGIN,
-        destination: DESTINATION,
-        travelMode: google.maps.TravelMode.TRANSIT,
-        computeAlternativeRoutes: true,
-        fields: ['*'],
-      })
-      if (!newRoutes) return
-
-      const directRoutes = newRoutes.filter((route: TransitRoute) => {
-        const legs = route.legs || []
-        if (legs.length === 0) return false
-        const transitSteps = legs[0].steps?.filter((s: RouteLegStep) => s.travelMode === google.maps.TravelMode.TRANSIT) || []
-        if (transitSteps.length !== 1) return false
-        const lineName = transitSteps[0].transitDetails?.transitLine?.shortName || transitSteps[0].transitDetails?.transitLine?.name || ''
-        return ALLOWED_LINES.includes(lineName as AllowedLine)
-      })
-      setRoutes(directRoutes)
-    }
-    loadDirections()
-  }, [map])
-
-  // Render Overlays
-  useEffect(() => {
-    if (!map || !MarkerClass || routes.length === 0 || Object.keys(kmlData).length === 0) return
-    // Cleanup old overlays
-    overlaysRef.current.forEach(overlay => {
-        if ('setMap' in overlay) {
-            (overlay as google.maps.Polyline).setMap(null);
-        } else {
-            overlay.map = null;
+      // Initial Fetch
+      const fetchLocations = async () => {
+        try {
+          const res = await fetch(`/api/location?ruta=${id}`)
+          const json = await res.json()
+          setBusDataMap(prev => ({ ...prev, [id]: { loading: false, error: false, data: json.buses || [] } }))
+        } catch {
+          setBusDataMap(prev => ({ ...prev, [id]: { loading: false, error: true, data: [] } }))
         }
+      }
+      
+      if (!busDataMap[id]) {
+        setBusDataMap(prev => ({ ...prev, [id]: { loading: true, error: false, data: [] } }))
+      }
+      fetchLocations()
+      intervals[id] = setInterval(fetchLocations, 20000)
     })
-    overlaysRef.current = []
 
-    routes.forEach((route, idx) => {
-      const isSelected = selectedRouteIdx === idx
-      const legs = route.legs || []
-      if (legs.length === 0) return
-      
-      const transitSteps = legs[0].steps?.filter((s: RouteLegStep) => s.travelMode === google.maps.TravelMode.TRANSIT) || []
-      if (transitSteps.length === 0) return
-      
-      const transitStep = transitSteps[0]
-      const lineName = transitStep.transitDetails?.transitLine?.shortName || transitStep.transitDetails?.transitLine?.name || ''
-      const color = ROUTE_COLORS[lineName] || '#555'
-      
-      if (kmlData[lineName]) {
-        // 1. Draw all segments of this line (ida, regreso, etc.)
-        Object.entries(kmlData[lineName]).forEach(([name, data]) => {
-          if (Array.isArray(data)) {
-            const isRegreso = name.toLowerCase().includes('regreso')
-            const opacity = isRegreso ? 0.6 : 1.0
-            const weight = isRegreso ? 4 : 6
-            const poly = drawPolyline(map, data as KmlCoords, color, weight, opacity, 10)
-            overlaysRef.current.push(poly)
-          }
-        })
+    // Cleanup: Clear intervals for routes that are no longer selected
+    return () => {
+      Object.values(intervals).forEach(clearInterval)
+    }
+  }, [selectedRouteIds])
 
-        // 2. Add Bus Markers
-        const buses = busData[lineName]?.data || []
-        buses.forEach((bus) => {
-          const busMarker = new MarkerClass({ map, position: { lat: bus.latitude, lng: bus.longitude }, content: createBusMarker(lineName, color, { busMarker: styles.busMarker, busMarkerIcon: styles.busMarkerIcon, busMarkerLineLabel: styles.busMarkerLineLabel }), title: `Bus ${bus.id}` })
-          overlaysRef.current.push(busMarker)
-        })
+  // 5. Smart Framing & Overlay Rendering
+  useEffect(() => {
+    if (!map || !MarkerClass) return
 
-        if (isSelected) {
-          const bounds = new google.maps.LatLngBounds()
-          Object.values(kmlData[lineName]).forEach(val => {
-            if (Array.isArray(val)) val.forEach(c => bounds.extend(c))
+    // 1. Cleanup removed routes
+    const activeIds = new Set(selectedRouteIds)
+    Object.keys(overlaysRef.current).forEach(id => {
+      if (!activeIds.has(id)) {
+        overlaysRef.current[id].forEach(o => 'setMap' in o ? o.setMap(null) : o.map = null)
+        delete overlaysRef.current[id]
+        endpointMarkersRef.current[id].forEach(m => m.map = null)
+        delete endpointMarkersRef.current[id]
+      }
+    })
+
+    const bounds = new google.maps.LatLngBounds()
+    let hasGeom = false
+
+    selectedRouteIds.forEach(id => {
+      const kml = kmlDataMap[id]
+      const buses = busDataMap[id]?.data || []
+      const meta = routeMetadata[id]
+      if (!kml || !meta) return
+
+      // Redraw/Update overlays for this route
+      // We clear and redraw just this route's layers to ensure consistency with real-time data
+      if (overlaysRef.current[id]) {
+        overlaysRef.current[id].forEach(o => 'setMap' in o ? o.setMap(null) : o.map = null)
+      }
+      if (endpointMarkersRef.current[id]) {
+        endpointMarkersRef.current[id].forEach(m => m.map = null)
+      }
+
+      const routeOverlays: (google.maps.Polyline | google.maps.marker.AdvancedMarkerElement)[] = []
+      
+      // Draw Paths
+      Object.entries(kml).forEach(([name, data]) => {
+        if (Array.isArray(data)) {
+          const isRegreso = name.toLowerCase().includes('regreso')
+          const poly = drawPolyline(map, data as KmlCoords, meta.color, isRegreso ? 4 : 6, isRegreso ? 0.6 : 1.0, 10)
+          routeOverlays.push(poly)
+          data.forEach(c => { bounds.extend(c); hasGeom = true })
+        }
+      })
+
+      // Draw Endpoints (Mobile Optimized)
+      const originMarker = new MarkerClass({
+        map, position: meta.inicio, title: `${id}: Inicio`,
+        content: (() => {
+          const div = document.createElement('div')
+          div.style.cssText = `width:10px;height:10px;border-radius:50%;background:#22c55e;border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.3)`
+          return div
+        })()
+      })
+      const destMarker = new MarkerClass({
+        map, position: meta.termina, title: `${id}: Fin`,
+        content: (() => {
+          const div = document.createElement('div')
+          div.style.cssText = `width:10px;height:10px;border-radius:50%;background:#ef4444;border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.3)`
+          return div
+        })()
+      })
+      endpointMarkersRef.current[id] = [originMarker, destMarker]
+
+      // Draw Buses
+      buses.forEach(bus => {
+        const busMarker = new MarkerClass({
+          map, position: { lat: bus.latitude, lng: bus.longitude }, zIndex: 100,
+          content: createBusMarker(id, meta.color, { 
+            busMarker: styles.busMarker, busMarkerIcon: styles.busMarkerIcon, busMarkerLineLabel: styles.busMarkerLineLabel 
           })
-          map.fitBounds(bounds, 60)
-        }
-      }
+        })
+        routeOverlays.push(busMarker)
+      })
+
+      overlaysRef.current[id] = routeOverlays
     })
-  }, [map, routes, selectedRouteIdx, kmlData, MarkerClass, busData])
+
+    // 2. Smart Frame (only when selection count changes or on first load)
+    if (hasGeom) {
+      map.fitBounds(bounds, { 
+        top: 100,     // More padding for search bar
+        bottom: 120,  // More padding for bottom tray
+        left: 40, 
+        right: 40 
+      })
+    }
+  }, [map, MarkerClass, kmlDataMap, busDataMap, selectedRouteIds])
+
+  const handleSave = () => {
+    setIsSaving(true)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(selectedRouteIds))
+    setTimeout(() => {
+      setIsSaving(false)
+      setShowToast(true)
+      setTimeout(() => setShowToast(false), 3000)
+    }, 400)
+  }
 
   return (
     <div className={styles.mapContainer}>
-      <div ref={mapRef} className={styles.map} style={{ height: '100%', width: '100%' }} />
-      <div className={styles.panel}>
-        <div className={styles.panelHeader}>
-          <div className={styles.busStatus}>
-            {Object.entries(busData).map(([id, status]) => (
-              <div key={id} className={styles.routeStatus}>
-                <span className={`${styles.statusDot} ${status.loading ? styles.statusLoading : status.error ? styles.statusError : styles.statusOk}`} />
-                <span>{id} · {status.loading ? '...' : status.error ? 'sin datos' : `${status.data.length} activas`}</span>
+      <div className={styles.map}>
+        <div ref={mapRef} style={{ height: '100%', width: '100%' }} />
+      </div>
+
+      {/* Floating Search */}
+      <div className={styles.searchContainer}>
+        <div className={styles.searchIcon}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </div>
+        <input
+          type="text"
+          className={styles.searchInput}
+          placeholder="Busca tu ruta..."
+          aria-label="Buscar rutas de autobús"
+          value={searchQuery}
+          onChange={(e) => { setSearchQuery(e.target.value); setIsSearchOpen(true) }}
+          onFocus={() => setIsSearchOpen(true)}
+        />
+        
+        {isSearchOpen && (
+          <div className={styles.searchResults}>
+            {filteredRoutes.map(id => (
+              <div key={id} className={styles.searchResultItem} onClick={() => toggleRoute(id)}>
+                <div className={styles.searchResultBadge} style={{ backgroundColor: routeMetadata[id]?.color }} />
+                <div style={{ display: 'flex', flex: 1, justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontWeight: 700 }}>{id}</span>
+                  {selectedRouteIds.includes(id) && (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="3">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  )}
+                </div>
               </div>
             ))}
           </div>
-        </div>
-        <div className={styles.routesList}>
-          {routes.map((route, idx) => (
-             <div key={idx} className={`${styles.routeCard} ${selectedRouteIdx === idx ? styles.selected : ''}`} onClick={() => setSelectedRouteIdx(idx)}>
-               Route {idx + 1} ({route.durationMillis ? `${Math.round(route.durationMillis / 60000)} min` : 'N/A'})
-             </div>
-           ))}
-        </div>
-        <div className={styles.authorCard}>
-          <div className={styles.authorInfo}>
-            <span className={styles.authorName}>Built by Esau Martinez</span>
-            <span className={styles.authorRole}>Developer</span>
+        )}
+      </div>
+
+      {/* Toast Notification */}
+      <div className={`${styles.toast} ${showToast ? styles.toastVisible : ''}`}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="3">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        Rutas guardadas
+      </div>
+
+      {/* Bottom Tray */}
+      <div className={`${styles.bottomTray} ${isTrayExpanded ? styles.trayExpanded : styles.trayCollapsed}`}>
+        <div className={styles.trayHeader} onClick={() => setIsTrayExpanded(!isTrayExpanded)}>
+          <div className={styles.trayHandle} />
+          <div className={styles.traySummary}>
+            <span className={styles.trayTitle}>
+              {selectedRouteIds.length === 0 ? 'Sin rutas seleccionadas' : `${selectedRouteIds.length} Rutas activas`}
+            </span>
+            <div className={styles.trayLegend}>
+              {selectedRouteIds.map(id => (
+                <div key={id} className={styles.legendDot} style={{ backgroundColor: routeMetadata[id]?.color }} />
+              ))}
+            </div>
           </div>
-          <div className={styles.authorLinks}>
-            <a href="https://github.com/dinoesau" target="_blank" rel="noopener noreferrer" className={styles.authorLink}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
-              </svg>
-              GitHub
-            </a>
-            <a href="mailto:contact@esau.com.mx" className={styles.authorLink}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="2" y="4" width="20" height="16" rx="2"/>
-                <path d="M22 4L12 13L2 4"/>
-              </svg>
-              Email
-            </a>
-          </div>
+          <svg 
+            width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2.5" 
+            style={{ transform: isTrayExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s' }}
+          >
+            <polyline points="18 15 12 9 6 15"></polyline>
+          </svg>
+        </div>
+
+        <div className={styles.trayContent}>
+          {selectedRouteIds.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '20px', color: '#94a3b8', fontSize: '14px' }}>
+              Busca una ruta arriba para comenzar
+            </div>
+          ) : (
+            <>
+              {selectedRouteIds.map(id => (
+                <div key={id} className={styles.activeRouteItem}>
+                  <div className={styles.routeInfo}>
+                    <div className={styles.routeBadge} style={{ backgroundColor: routeMetadata[id]?.color }}>{id}</div>
+                    <div>
+                      <div className={styles.routeName}>{routeMetadata[id]?.name}</div>
+                      <div className={styles.routeStatusText}>
+                        <span className={`${styles.statusDot} ${busDataMap[id]?.loading ? styles.statusLoading : busDataMap[id]?.error ? styles.statusError : styles.statusOk}`} />
+                        {' '}{busDataMap[id]?.loading ? 'Cargando...' : busDataMap[id]?.error ? 'Sin datos' : `${busDataMap[id]?.data.length} autobuses`}
+                      </div>
+                    </div>
+                  </div>
+                  <button className={styles.removeButton} onClick={() => toggleRoute(id)}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </button>
+                </div>
+              ))}
+              <button 
+                className={`${styles.saveButton} ${isSaving ? styles.saveButtonPulse : ''}`}
+                onClick={handleSave}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                </svg>
+                Guardar configuración
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Click outside to close search */}
+      {isSearchOpen && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9 }} onClick={() => setIsSearchOpen(false)} />
+      )}
+
+      {/* Author Card (Desktop Overlay) */}
+      <div className={styles.authorOverlay}>
+        <div className={styles.authorCardCompact}>
+          <span className={styles.authorName}>Built by Esau Martinez</span>
+          <a href="https://github.com/dinoesau" target="_blank" rel="noopener noreferrer" className={styles.authorLink}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+            </svg>
+            GitHub
+          </a>
         </div>
       </div>
     </div>

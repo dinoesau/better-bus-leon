@@ -5,6 +5,8 @@
   height: 64px;
   flex-shrink: 0;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  position: relative;
+  z-index: 50;
 }
 
 .headerInner {
@@ -59,10 +61,11 @@
 
 .main {
   flex: 1;
-  padding: 20px 24px;
+  padding: 16px;
   max-width: 1400px;
   width: 100%;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
+  min-height: 0; /* Important for flex children to respect parent height */
 }
