@@ -44,10 +44,6 @@ export default function Home() {
               <p>León, Guanajuato</p>
             </div>
           </div>
-          <div className={styles.routeBadges}>
-            <span className={`${styles.badge} ${styles.badgeA03}`}>A-03</span>
-            <span className={`${styles.badge} ${styles.badgeA75}`}>A-75</span>
-          </div>
         </div>
       </header>
       <main className={styles.main}>

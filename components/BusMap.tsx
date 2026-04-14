@@ -70,7 +70,27 @@ export default function BusMap() {
   const endpointMarkersRef = useRef<Record<string, google.maps.marker.AdvancedMarkerElement[]>>({})
   
   // State for selection
-  const [selectedRouteIds, setSelectedRouteIds] = useState<string[]>([])
+  const [selectedRouteIds, setSelectedRouteIds] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return DEFAULT_ROUTES
+    const savedV2 = localStorage.getItem(STORAGE_KEY)
+    if (savedV2) {
+      try {
+        const parsed = JSON.parse(savedV2)
+        if (Array.isArray(parsed)) {
+          const valid = parsed.filter(id => VALID_ROUTE_IDS.includes(id)).slice(0, MAX_SELECTION)
+          if (valid.length > 0) return valid
+        }
+      } catch (e) { console.error('Failed to parse saved routes', e) }
+    }
+    
+    // Legacy migration check (will be cleaned up in useEffect)
+    const savedV1 = localStorage.getItem(OLD_STORAGE_KEY)
+    if (savedV1 && VALID_ROUTE_IDS.includes(savedV1)) {
+      return [savedV1]
+    }
+    
+    return DEFAULT_ROUTES
+  })
   const [searchQuery, setSearchQuery] = useState('')
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [isTrayExpanded, setIsTrayExpanded] = useState(false)
@@ -81,28 +101,16 @@ export default function BusMap() {
   const [busDataMap, setBusDataMap] = useState<Record<string, RouteBusState>>({})
   const [kmlDataMap, setKmlDataMap] = useState<Record<string, KmlRouteData>>({})
 
-  // 1. Initialization: Migration & Loading
+  // 1. Initialization: Legacy Cleanup
   useEffect(() => {
-    const savedV2 = localStorage.getItem(STORAGE_KEY)
-    if (savedV2) {
-      try {
-        const parsed = JSON.parse(savedV2)
-        if (Array.isArray(parsed)) {
-          setSelectedRouteIds(parsed.filter(id => VALID_ROUTE_IDS.includes(id)).slice(0, MAX_SELECTION))
-          return
-        }
-      } catch (e) { console.error('Failed to parse saved routes', e) }
-    }
-    
-    // Migration from single-select
     const savedV1 = localStorage.getItem(OLD_STORAGE_KEY)
-    if (savedV1 && VALID_ROUTE_IDS.includes(savedV1)) {
-      setSelectedRouteIds([savedV1])
+    if (savedV1) {
       localStorage.removeItem(OLD_STORAGE_KEY)
-    } else {
-      setSelectedRouteIds(DEFAULT_ROUTES)
+      // If we are here, we already migrated in the lazy initializer
+      // but we need to ensure the new format is persisted if it was a migration
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(selectedRouteIds))
     }
-  }, [])
+  }, [selectedRouteIds])
 
   // 2. Search Logic
   const filteredRoutes = useMemo(() => {
@@ -151,19 +159,26 @@ export default function BusMap() {
     initMap()
   }, [])
 
-  // 4. Data Polling Registry
+  // 4. Data Loading & Polling
+  // 4a. KML Loading (Independent of polling)
+  useEffect(() => {
+    selectedRouteIds.forEach(id => {
+      if (!kmlDataMap[id]) {
+        loadRouteKml(id).then(kml => {
+          setKmlDataMap(prev => {
+            if (prev[id]) return prev // Already loaded
+            return { ...prev, [id]: kml }
+          })
+        })
+      }
+    })
+  }, [selectedRouteIds, kmlDataMap])
+
+  // 4b. Location Polling Registry
   useEffect(() => {
     const intervals: Record<string, NodeJS.Timeout> = {}
 
     selectedRouteIds.forEach(id => {
-      // Load KML if not cached
-      if (!kmlDataMap[id]) {
-        loadRouteKml(id).then(kml => {
-          setKmlDataMap(prev => ({ ...prev, [id]: kml }))
-        })
-      }
-
-      // Initial Fetch
       const fetchLocations = async () => {
         try {
           const res = await fetch(`/api/location?ruta=${id}`)
@@ -174,14 +189,16 @@ export default function BusMap() {
         }
       }
       
-      if (!busDataMap[id]) {
-        setBusDataMap(prev => ({ ...prev, [id]: { loading: true, error: false, data: [] } }))
-      }
+      // Only set loading if we don't have data yet
+      setBusDataMap(prev => {
+        if (prev[id]) return prev
+        return { ...prev, [id]: { loading: true, error: false, data: [] } }
+      })
+
       fetchLocations()
       intervals[id] = setInterval(fetchLocations, 20000)
     })
 
-    // Cleanup: Clear intervals for routes that are no longer selected
     return () => {
       Object.values(intervals).forEach(clearInterval)
     }
