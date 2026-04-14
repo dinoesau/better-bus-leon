@@ -9,7 +9,7 @@
  */
 
 /**
- * Metadata for bus routes A-03 and A-75 in León, Guanajuato.
+ * Metadata for bus routes A-03, A-75 and A-31 in León, Guanajuato.
  * Actual route geometry is loaded at runtime from /public/data/*.kml
  */
 
@@ -44,6 +44,17 @@ export const routes: Record<string, BusRoute> = {
     // KML source: /public/data/A-75.kml
     inicio: { lat: 21.132054, lng: -101.716057 },  // Terminal San Juan Bosco
     termina: { lat: 21.146437, lng: -101.763561 },  // Colonia Rizos del Saucillo III
+  },
+
+  "A-31": {
+    name: "Ruta A-31",
+    color: "#D69E2E",
+    description: "Terminal San Juan Bosco — Colinas de la Fragua Plus II",
+    empresa: "San Juan Bosco",
+    tipo: "Alimentadora",
+    // KML source: /public/data/A-31.kml
+    inicio: { lat: 21.131913, lng: -101.716057 },
+    termina: { lat: 21.153457, lng: -101.743316 },
   },
 };
 
