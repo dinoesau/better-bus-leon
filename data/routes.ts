@@ -9,7 +9,7 @@
  */
 
 /**
- * Metadata for bus routes A-03, A-75 and A-31 in León, Guanajuato.
+ * Metadata for bus routes A-03, A-75, A-31 and L-03 in León, Guanajuato.
  * Actual route geometry is loaded at runtime from /public/data/*.kml
  */
 
@@ -55,6 +55,17 @@ export const routes: Record<string, BusRoute> = {
     // KML source: /public/data/A-31.kml
     inicio: { lat: 21.131913, lng: -101.716057 },
     termina: { lat: 21.153457, lng: -101.743316 },
+  },
+
+  "L-03": {
+    name: "Ruta L-03",
+    color: "#38A169",
+    description: "Terminal San Juan Bosco — Terminal San Jerónimo",
+    empresa: "Red Optibus Oriente - Red Integral",
+    tipo: "Troncal",
+    // KML source: /public/data/L-03.kml
+    inicio: { lat: 21.1323685, lng: -101.716218 },
+    termina: { lat: 21.1499699, lng: -101.6751369 },
   },
 };
 
