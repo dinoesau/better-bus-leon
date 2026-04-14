@@ -58,3 +58,9 @@ export function createBusMarker(lineName: string, color: string, classNames: Bus
 
   return el
 }
+
+export function createUserMarker(className: string): HTMLDivElement {
+  const el = document.createElement('div')
+  el.className = className
+  return el
+}

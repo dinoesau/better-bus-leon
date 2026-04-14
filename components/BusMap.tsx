@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useMemo } from 'react'
 import { setOptions, importLibrary } from '@googlemaps/js-api-loader'
 import styles from './BusMap.module.css'
-import { createBusMarker } from '../lib/map-markers'
+import { createBusMarker, createUserMarker } from '../lib/map-markers'
 import { routes as routeMetadata } from '../data/routes'
 import { VALID_ROUTE_IDS } from '../lib/route-config'
 
@@ -65,6 +65,10 @@ export default function BusMap() {
   const [map, setMap] = useState<google.maps.Map | null>(null)
   const [MarkerClass, setMarkerClass] = useState<typeof google.maps.marker.AdvancedMarkerElement | null>(null)
   
+  // User Location
+  const [userPosition, setUserPosition] = useState<google.maps.LatLngLiteral | null>(null)
+  const userMarkerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null)
+
   // Refs for managing state and overlays
   const hasInitialFit = useRef(false)
   const overlaysRef = useRef<Record<string, (google.maps.Polyline | google.maps.marker.AdvancedMarkerElement)[]>>({})
@@ -160,7 +164,42 @@ export default function BusMap() {
     initMap()
   }, [])
 
-  // 4. Data Loading & Polling
+  // 4. User Location Tracking
+  useEffect(() => {
+    if (!('geolocation' in navigator)) return
+
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        setUserPosition({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude
+        })
+      },
+      (err) => console.error('Geolocation error:', err),
+      { enableHighAccuracy: true, maximumAge: 10000 }
+    )
+
+    return () => navigator.geolocation.clearWatch(watchId)
+  }, [])
+
+  // Update/Create User Marker
+  useEffect(() => {
+    if (!map || !MarkerClass || !userPosition) return
+
+    if (!userMarkerRef.current) {
+      userMarkerRef.current = new MarkerClass({
+        map,
+        position: userPosition,
+        title: 'Tu ubicación',
+        content: createUserMarker(styles.userLocationMarker),
+        zIndex: 200
+      })
+    } else {
+      userMarkerRef.current.position = userPosition
+    }
+  }, [map, MarkerClass, userPosition])
+
+  // 5. Data Loading & Polling
   // 4a. KML Loading (Independent of polling)
   useEffect(() => {
     selectedRouteIds.forEach(id => {
@@ -309,6 +348,13 @@ export default function BusMap() {
     }, 400)
   }
 
+  const centerOnUser = () => {
+    if (map && userPosition) {
+      map.panTo(userPosition)
+      if (map.getZoom()! < 15) map.setZoom(15)
+    }
+  }
+
   return (
     <div className={styles.mapContainer}>
       <div className={styles.map}>
@@ -359,6 +405,24 @@ export default function BusMap() {
         </svg>
         Rutas guardadas
       </div>
+
+      {/* Center on Me Button */}
+      {userPosition && (
+        <button 
+          className={styles.centerMeButton} 
+          onClick={centerOnUser}
+          aria-label="Centrar en mi ubicación"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <circle cx="12" cy="12" r="3"></circle>
+            <line x1="12" y1="2" x2="12" y2="5"></line>
+            <line x1="12" y1="19" x2="12" y2="22"></line>
+            <line x1="2" y1="12" x2="5" y2="12"></line>
+            <line x1="19" y1="12" x2="22" y2="12"></line>
+          </svg>
+        </button>
+      )}
 
       {/* Bottom Tray */}
       <div className={`${styles.bottomTray} ${isTrayExpanded ? styles.trayExpanded : styles.trayCollapsed}`}>
