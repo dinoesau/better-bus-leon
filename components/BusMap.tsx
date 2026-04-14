@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { setOptions, importLibrary } from '@googlemaps/js-api-loader'
 import styles from './BusMap.module.css'
-import { createOriginMarker, createDestinationMarker, createStopMarker, createBusMarker } from '../lib/map-markers'
+import { createBusMarker } from '../lib/map-markers'
 
 const ORIGIN = { lat: 21.123232, lng: -101.731127 }
 const DESTINATION = { lat: 21.13129, lng: -101.71705 }
@@ -95,28 +95,6 @@ async function loadRouteKml(routeId: string): Promise<KmlRouteData> {
     }
   })
   return out
-}
-
-function nearestIdx(coords: KmlCoords, lat: number, lng: number) {
-  let best = 0
-  let bestDist = Infinity
-  coords.forEach((c, i) => {
-    const d = (c.lat - lat) ** 2 + (c.lng - lng) ** 2
-    if (d < bestDist) { bestDist = d; best = i }
-  })
-  return best
-}
-
-function detectDirection(kml: KmlRouteData, lineName: string, boardingLat: number, boardingLng: number, alightingLat: number, alightingLng: number) {
-  for (const suffix of ['ida', 'regreso']) {
-    const data = kml[`${lineName}-${suffix}`]
-    if (!data || !Array.isArray(data) || data.length < 2) continue
-    const coords = data as KmlCoords
-    const bIdx = nearestIdx(coords, boardingLat, boardingLng)
-    const aIdx = nearestIdx(coords, alightingLat, alightingLng)
-    if (aIdx > bIdx) return { coords, boardingIdx: bIdx, alightingIdx: aIdx }
-  }
-  return null
 }
 
 function drawPolyline(map: google.maps.Map, path: google.maps.LatLngLiteral[], color: string, weight: number, opacity: number, zIndex: number) {
