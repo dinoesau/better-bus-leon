@@ -1,62 +1,45 @@
-import { parseCustomPayload } from '@/lib/parseCustomPayload';
-import { ROUTE_API_PARAMS, VALID_ROUTE_IDS } from '@/lib/route-config';
+import { parseRouteId } from '@/lib/domain/bus-route';
+import { fetchBusLocations } from '@/lib/services/location-service';
 
 const CACHE_HEADERS = {
   'Content-Type': 'application/json',
   'CDN-Cache-Control': 'max-age=20',
 } as const;
 
+/**
+ * The Edge: Acts as the Bouncer (validation) and maps results to HTTP responses.
+ */
 export async function GET(request: Request): Promise<Response> {
   const { searchParams } = new URL(request.url);
-  const ruta = searchParams.get('ruta');
 
-  if (!ruta || !VALID_ROUTE_IDS.includes(ruta)) {
+  // 1. Validation (Defensive - The Bouncer)
+  // We transform untrusted input into a Branded Type.
+  const routeResult = parseRouteId(searchParams.get('ruta'));
+  
+  if (!routeResult.ok) {
     return new Response(
-      JSON.stringify({ error: `Invalid route. Valid routes: ${VALID_ROUTE_IDS.join(', ')}` }),
-      { status: 400, headers: CACHE_HEADERS },
+      JSON.stringify({ error: routeResult.error }),
+      { status: 400, headers: CACHE_HEADERS }
     );
   }
 
-  const parametro = ROUTE_API_PARAMS[ruta];
-  const apiBase = process.env.BUSES_API_BASE;
+  // 2. Core Execution (Trusting the Branded Type)
+  // The service only accepts ValidRouteId, so no re-validation is needed.
+  const locationResult = await fetchBusLocations(routeResult.value);
 
-  if (!apiBase) {
+  // 3. Graceful Error Mapping
+  if (!locationResult.ok) {
+    // If it's a fetch/upstream error, we return 502 (Bad Gateway)
+    // If it's a configuration error (thrown by assertion), it naturally becomes 500.
     return new Response(
-      JSON.stringify({ error: 'Server configuration error: BUSES_API_BASE not set' }),
-      { status: 500, headers: CACHE_HEADERS },
+      JSON.stringify({ error: locationResult.error.message }),
+      { status: 502, headers: CACHE_HEADERS }
     );
   }
 
-  const apiUrl = `${apiBase}?parametro=${parametro}`;
-
-  try {
-    const res = await fetch(apiUrl, {
-      headers: {
-        'User-Agent': 'Dalvik/2.1.0 (Linux; U; Android 15; Pixel 2 Build/AP3A.241105.008)',
-        'Connection': 'Keep-Alive',
-        'Accept-Encoding': 'identity',
-      },
-    });
-
-    if (!res.ok) {
-      return new Response(JSON.stringify({ error: `HTTP ${res.status}` }), {
-        status: 502,
-        headers: CACHE_HEADERS,
-      });
-    }
-
-    const base64 = (await res.text()).trim();
-    const parsed = parseCustomPayload(base64);
-    const data = { buses: parsed.namedFilteredData };
-
-    return new Response(JSON.stringify(data), {
-      status: 200,
-      headers: CACHE_HEADERS,
-    });
-  } catch (err) {
-    return new Response(JSON.stringify({ error: String(err) }), {
-      status: 500,
-      headers: CACHE_HEADERS,
-    });
-  }
+  // 4. Success Response
+  return new Response(
+    JSON.stringify({ buses: locationResult.value }),
+    { status: 200, headers: CACHE_HEADERS }
+  );
 }
