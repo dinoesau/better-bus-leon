@@ -249,7 +249,7 @@ export default function BusMap() {
         Object.entries(kmlData[lineName]).forEach(([name, data]) => {
           if (Array.isArray(data)) {
             const isRegreso = name.toLowerCase().includes('regreso')
-            const opacity = isRegreso ? 0.3 : 1.0
+            const opacity = isRegreso ? 0.6 : 1.0
             const weight = isRegreso ? 4 : 6
             const poly = drawPolyline(map, data as KmlCoords, color, weight, opacity, 10)
             overlaysRef.current.push(poly)
