@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Rutas de Bus León',
+    name: 'Rutas de Bus en vivo - León',
     short_name: 'Bus León',
     description: 'Mapa en tiempo real de las rutas A-03, A-75, A-31 y L-03 en León, Guanajuato',
     start_url: '/',
