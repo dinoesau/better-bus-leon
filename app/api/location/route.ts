@@ -1,4 +1,4 @@
-import { parseRouteId } from '@/lib/domain/bus-route';
+import { parseLocationRequest } from '@/lib/domain/bus-route';
 import { fetchBusLocations } from '@/lib/services/location-service';
 
 const CACHE_HEADERS = {
@@ -14,7 +14,8 @@ export async function GET(request: Request): Promise<Response> {
 
   // 1. Validation (Defensive - The Bouncer)
   // We transform untrusted input into a Branded Type.
-  const routeResult = parseRouteId(searchParams.get('ruta'));
+  // parseLocationRequest is strict: no duplicates, no extra params.
+  const routeResult = parseLocationRequest(searchParams);
   
   if (!routeResult.ok) {
     return new Response(

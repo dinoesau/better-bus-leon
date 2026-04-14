@@ -16,8 +16,36 @@ const RouteIdSchema = z
   .transform((val) => val as ValidRouteId);
 
 /**
- * The Bouncer: A Smart Constructor aligned with Rule 3 of the architectural guide.
+ * The strict schema for the entire location request.
+ * Aligned with Rule 3: Parse, Don't Validate.
  */
-export function parseRouteId(id: unknown): Result<z.infer<typeof RouteIdSchema>, string> {
-  return fromZod(RouteIdSchema.safeParse(id));
+const LocationRequestSchema = z.object({
+  ruta: RouteIdSchema,
+}).strict();
+
+/**
+ * Strict parser for the location request parameters.
+ * Rejects duplicates and unrecognized parameters.
+ */
+export function parseLocationRequest(searchParams: URLSearchParams): Result<ValidRouteId, string> {
+  const params: Record<string, string> = {};
+  const duplicates: string[] = [];
+
+  searchParams.forEach((value, key) => {
+    if (key in params) {
+      duplicates.push(key);
+    }
+    params[key] = value;
+  });
+
+  if (duplicates.length > 0) {
+    return { ok: false, error: `Duplicate parameter: ${duplicates.join(', ')}` };
+  }
+
+  const result = LocationRequestSchema.safeParse(params);
+  if (!result.success) {
+    return fromZod(result);
+  }
+
+  return { ok: true, value: result.data.ruta };
 }
