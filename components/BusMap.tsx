@@ -65,7 +65,8 @@ export default function BusMap() {
   const [map, setMap] = useState<google.maps.Map | null>(null)
   const [MarkerClass, setMarkerClass] = useState<typeof google.maps.marker.AdvancedMarkerElement | null>(null)
   
-  // Refs for managing overlays per route
+  // Refs for managing state and overlays
+  const hasInitialFit = useRef(false)
   const overlaysRef = useRef<Record<string, (google.maps.Polyline | google.maps.marker.AdvancedMarkerElement)[]>>({})
   const endpointMarkersRef = useRef<Record<string, google.maps.marker.AdvancedMarkerElement[]>>({})
   
@@ -282,14 +283,19 @@ export default function BusMap() {
       overlaysRef.current[id] = routeOverlays
     })
 
-    // 2. Smart Frame (only when selection count changes or on first load)
-    if (hasGeom) {
-      map.fitBounds(bounds, { 
-        top: 100,     // More padding for search bar
-        bottom: 120,  // More padding for bottom tray
-        left: 40, 
-        right: 40 
-      })
+    // 2. Smart Frame (only on initial load when geometry is ready)
+    if (hasGeom && !hasInitialFit.current) {
+      // Ensure we have KML for all selected routes before the first fit
+      const allKmlLoaded = selectedRouteIds.every(id => kmlDataMap[id])
+      if (allKmlLoaded) {
+        map.fitBounds(bounds, { 
+          top: 100,     // More padding for search bar
+          bottom: 120,  // More padding for bottom tray
+          left: 40, 
+          right: 40 
+        })
+        hasInitialFit.current = true
+      }
     }
   }, [map, MarkerClass, kmlDataMap, busDataMap, selectedRouteIds])
 
