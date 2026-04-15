@@ -47,7 +47,7 @@ export function parseCustomPayload(dataString: string): Result<ParsedResult, Err
 
     if (!decodedString.includes('|')) {
       console.log('[no rows] Decoded string:', decodedString); // Debugging output
-      return { ok: false, error: new Error('Invalid payload format: missing row delimiter') };
+      return { ok: false, error: new Error('Invalid payload format: missing row delimiter, base64: ' + dataString) };
     }
 
     const rawRows = decodedString.split('|');
