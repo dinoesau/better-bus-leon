@@ -1,0 +1,402 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>R-17</name>
+    <description>León II - Jardines de San Pedro</description>
+    <Style id="icon-1899-000000-normal">
+      <IconStyle>
+        <color>ff000000</color>
+        <scale>1</scale>
+        <Icon>
+          <href>https://www.gstatic.com/mapspro/images/stock/503-wht-blank_maps.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+    </Style>
+    <Style id="icon-1899-000000-highlight">
+      <IconStyle>
+        <color>ff000000</color>
+        <scale>1</scale>
+        <Icon>
+          <href>https://www.gstatic.com/mapspro/images/stock/503-wht-blank_maps.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>1</scale>
+      </LabelStyle>
+    </Style>
+    <StyleMap id="icon-1899-000000">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-1899-000000-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-1899-000000-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="icon-1899-BDBDBD-normal">
+      <IconStyle>
+        <color>ffbdbdbd</color>
+        <scale>1</scale>
+        <Icon>
+          <href>https://www.gstatic.com/mapspro/images/stock/503-wht-blank_maps.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+    </Style>
+    <Style id="icon-1899-BDBDBD-highlight">
+      <IconStyle>
+        <color>ffbdbdbd</color>
+        <scale>1</scale>
+        <Icon>
+          <href>https://www.gstatic.com/mapspro/images/stock/503-wht-blank_maps.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>1</scale>
+      </LabelStyle>
+    </Style>
+    <StyleMap id="icon-1899-BDBDBD">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-1899-BDBDBD-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-1899-BDBDBD-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="line-A52714-2782-normal">
+      <LineStyle>
+        <color>ff1427a5</color>
+        <width>2.782</width>
+      </LineStyle>
+    </Style>
+    <Style id="line-A52714-2782-highlight">
+      <LineStyle>
+        <color>ff1427a5</color>
+        <width>4.173</width>
+      </LineStyle>
+    </Style>
+    <StyleMap id="line-A52714-2782">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#line-A52714-2782-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#line-A52714-2782-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="line-EDA29B-3170-normal">
+      <LineStyle>
+        <color>ff9ba2ed</color>
+        <width>3.17</width>
+      </LineStyle>
+    </Style>
+    <Style id="line-EDA29B-3170-highlight">
+      <LineStyle>
+        <color>ff9ba2ed</color>
+        <width>4.755</width>
+      </LineStyle>
+    </Style>
+    <StyleMap id="line-EDA29B-3170">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#line-EDA29B-3170-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#line-EDA29B-3170-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Folder>
+      <name>R-17</name>
+      <Placemark>
+        <name>Inicio</name>
+        <description><![CDATA[descripción: <br>Empresa: <br>Tipo: <br>Origen: ]]></description>
+        <styleUrl>#icon-1899-BDBDBD</styleUrl>
+        <ExtendedData>
+          <Data name="descripción">
+            <value/>
+          </Data>
+          <Data name="Empresa">
+            <value/>
+          </Data>
+          <Data name="Tipo">
+            <value/>
+          </Data>
+          <Data name="Origen">
+            <value/>
+          </Data>
+        </ExtendedData>
+        <Point>
+          <coordinates>
+            -101.7264271,21.1050336,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>R-17-ida</name>
+        <description><![CDATA[descripción: <br>Empresa: Bellavista<br>Tipo: Convencional<br>Origen: Colonia Las Hilamas - Colonia Peñitas]]></description>
+        <styleUrl>#line-A52714-2782</styleUrl>
+        <ExtendedData>
+          <Data name="descripción">
+            <value/>
+          </Data>
+          <Data name="Empresa">
+            <value>Bellavista</value>
+          </Data>
+          <Data name="Tipo">
+            <value>Convencional</value>
+          </Data>
+          <Data name="Origen">
+            <value>Colonia Las Hilamas - Colonia Peñitas</value>
+          </Data>
+        </ExtendedData>
+        <LineString>
+          <tessellate>1</tessellate>
+          <coordinates>
+            -101.726413,21.105015,0
+            -101.726058,21.105365,0
+            -101.726062,21.1054,0
+            -101.726116,21.105436,0
+            -101.726162,21.105422,0
+            -101.728172,21.10366,0
+            -101.728414,21.103284,0
+            -101.728677,21.102659,0
+            -101.728779,21.102573,0
+            -101.728997,21.10244,0
+            -101.729137,21.102346,0
+            -101.729438,21.102506,0
+            -101.730124,21.103099,0
+            -101.730532,21.10375,0
+            -101.730698,21.104291,0
+            -101.730773,21.104749,0
+            -101.73075,21.10522,0
+            -101.730647,21.105716,0
+            -101.7304,21.106406,0
+            -101.730229,21.107173,0
+            -101.730164,21.107888,0
+            -101.730083,21.1128,0
+            -101.730205,21.113447,0
+            -101.730746,21.114533,0
+            -101.731503,21.115933,0
+            -101.731628,21.11648,0
+            -101.731615,21.117382,0
+            -101.73143,21.120003,0
+            -101.731313,21.120391,0
+            -101.731,21.120739,0
+            -101.730448,21.121229,0
+            -101.730263,21.121215,0
+            -101.726298,21.117452,0
+            -101.726146,21.117494,0
+            -101.725449,21.120102,0
+            -101.724481,21.11987,0
+            -101.724027,21.12151,0
+            -101.723132,21.121357,0
+            -101.721927,21.121419,0
+            -101.721462,21.12148,0
+            -101.721358,21.121782,0
+            -101.718921,21.126094,0
+            -101.71428,21.12379,0
+            -101.714118,21.124309,0
+            -101.71393,21.125232,0
+            -101.713789,21.125679,0
+            -101.713758,21.126168,0
+            -101.713889,21.126867,0
+            -101.713994,21.127608,0
+            -101.713914,21.127663,0
+            -101.713824,21.127663,0
+            -101.711724,21.127221,0
+            -101.711083,21.130517,0
+            -101.704101,21.129067,0
+            -101.703665,21.130778,0
+            -101.703541,21.131063,0
+            -101.702476,21.135686,0
+            -101.701551,21.138292,0
+            -101.701624,21.138941,0
+            -101.702132,21.142089,0
+            -101.702129,21.142493,0
+            -101.701624,21.145177,0
+            -101.697331,21.143434,0
+            -101.697073,21.143545,0
+            -101.695943,21.143091,0
+            -101.696925,21.140385,0
+            -101.694945,21.139747,0
+            -101.69357,21.139263,0
+            -101.692971,21.139092,0
+            -101.692241,21.140158,0
+            -101.691979,21.140305,0
+            -101.691895,21.140494,0
+            -101.691604,21.140734,0
+            -101.689271,21.140126,0
+            -101.689174,21.14027,0
+            -101.689482,21.140839,0
+            -101.689869,21.141658,0
+            -101.689819,21.141745,0
+            -101.689688,21.141779,0
+            -101.686414,21.140311,0
+            -101.686244,21.140416,0
+            -101.686073,21.141772,0
+            -101.685537,21.144544,0
+            -101.684414,21.144374,0
+            -101.682184,21.14445,0
+            -101.682124,21.142412,0
+          </coordinates>
+        </LineString>
+      </Placemark>
+      <Placemark>
+        <name>R-17-regreso</name>
+        <description><![CDATA[descripción: <br>Empresa: Bellavista<br>Tipo: Convencional<br>Origen: Colonia Peñitas - Colonia Las Hilamas]]></description>
+        <styleUrl>#line-EDA29B-3170</styleUrl>
+        <ExtendedData>
+          <Data name="descripción">
+            <value/>
+          </Data>
+          <Data name="Empresa">
+            <value>Bellavista</value>
+          </Data>
+          <Data name="Tipo">
+            <value>Convencional</value>
+          </Data>
+          <Data name="Origen">
+            <value>Colonia Peñitas - Colonia Las Hilamas</value>
+          </Data>
+        </ExtendedData>
+        <LineString>
+          <tessellate>1</tessellate>
+          <coordinates>
+            -101.682125,21.142402,0
+            -101.682172,21.142356,0
+            -101.6847,21.142318,0
+            -101.686104,21.142587,0
+            -101.686434,21.140927,0
+            -101.687114,21.140921,0
+            -101.689994,21.142187,0
+            -101.690405,21.14251,0
+            -101.690816,21.142565,0
+            -101.692262,21.143183,0
+            -101.692339,21.143126,0
+            -101.692305,21.143018,0
+            -101.690844,21.142312,0
+            -101.690416,21.141948,0
+            -101.691928,21.140539,0
+            -101.692193,21.140452,0
+            -101.692263,21.140184,0
+            -101.692994,21.139119,0
+            -101.693625,21.139296,0
+            -101.693629,21.139296,0
+            -101.693636,21.1393,0
+            -101.694094,21.139499,0
+            -101.697766,21.140627,0
+            -101.698967,21.141089,0
+            -101.7002,21.14153,0
+            -101.700343,21.141511,0
+            -101.701231,21.142311,0
+            -101.700887,21.14438,0
+            -101.701807,21.144717,0
+            -101.702227,21.142497,0
+            -101.702447,21.141829,0
+            -101.702764,21.139285,0
+            -101.703065,21.137697,0
+            -101.703794,21.134687,0
+            -101.704619,21.131162,0
+            -101.704882,21.130082,0
+            -101.711969,21.131565,0
+            -101.712606,21.128266,0
+            -101.71422,21.128606,0
+            -101.713838,21.126375,0
+            -101.713836,21.125878,0
+            -101.714123,21.12479,0
+            -101.714258,21.123897,0
+            -101.714299,21.123867,0
+            -101.716492,21.124962,0
+            -101.717695,21.125554,0
+            -101.72021,21.121072,0
+            -101.721366,21.121618,0
+            -101.721445,21.121742,0
+            -101.721529,21.121802,0
+            -101.721701,21.121758,0
+            -101.721795,21.121645,0
+            -101.72241,21.121588,0
+            -101.723199,21.121581,0
+            -101.724014,21.121701,0
+            -101.725381,21.116681,0
+            -101.725438,21.116677,0
+            -101.730168,21.121208,0
+            -101.73,21.121459,0
+            -101.730025,21.121686,0
+            -101.730211,21.121794,0
+            -101.730403,21.121764,0
+            -101.730507,21.121656,0
+            -101.730562,21.121436,0
+            -101.731319,21.120741,0
+            -101.731503,21.120423,0
+            -101.731588,21.120129,0
+            -101.731814,21.116809,0
+            -101.731755,21.116219,0
+            -101.731542,21.11564,0
+            -101.730465,21.113701,0
+            -101.730248,21.112936,0
+            -101.730237,21.112439,0
+            -101.730349,21.107519,0
+            -101.730458,21.106904,0
+            -101.730628,21.106207,0
+            -101.730882,21.105498,0
+            -101.730936,21.104797,0
+            -101.73082,21.104063,0
+            -101.730661,21.103636,0
+            -101.73035,21.103139,0
+            -101.730005,21.102762,0
+            -101.729488,21.102342,0
+            -101.729109,21.102148,0
+            -101.72895,21.101917,0
+            -101.728699,21.101847,0
+            -101.728487,21.101921,0
+            -101.728358,21.102144,0
+            -101.728397,21.102374,0
+            -101.72853,21.102551,0
+            -101.728499,21.102825,0
+            -101.728258,21.103365,0
+            -101.727931,21.103714,0
+            -101.726425,21.104992,0
+          </coordinates>
+        </LineString>
+      </Placemark>
+      <Placemark>
+        <name>Termina</name>
+        <description><![CDATA[descripción: <br>Empresa: <br>Tipo: <br>Origen: ]]></description>
+        <styleUrl>#icon-1899-000000</styleUrl>
+        <ExtendedData>
+          <Data name="descripción">
+            <value/>
+          </Data>
+          <Data name="Empresa">
+            <value/>
+          </Data>
+          <Data name="Tipo">
+            <value/>
+          </Data>
+          <Data name="Origen">
+            <value/>
+          </Data>
+        </ExtendedData>
+        <Point>
+          <coordinates>
+            -101.682124,21.142412,0
+          </coordinates>
+        </Point>
+      </Placemark>
+    </Folder>
+  </Document>
+</kml>
