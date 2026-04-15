@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'Rutas de Bus en vivo - León',
     short_name: 'Bus León',
-    description: 'Mapa en tiempo real de las rutas A-03, A-75, A-31 y L-03 en León, Guanajuato',
+    description: 'Mapa en tiempo real de las rutas A-03, A-31, L-04, X-04, R-17 y R-84 en León, Guanajuato',
     start_url: '/',
     display: 'standalone',
     background_color: '#ffffff',

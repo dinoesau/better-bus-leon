@@ -9,7 +9,7 @@
  */
 
 /**
- * Metadata for bus routes A-03, A-75, A-31 and L-03 in León, Guanajuato.
+ * Metadata for bus routes A-03, A-75, A-31, L-03, L-04, X-04, R-17 and R-84 in León, Guanajuato.
  * Actual route geometry is loaded at runtime from /public/data/*.kml
  */
 
@@ -76,6 +76,39 @@ export const routes: Record<string, BusRoute> = {
     // KML source: /public/data/L-04.kml
     inicio: { lat: 21.132393, lng: -101.71618 },
     termina: { lat: 21.0955648, lng: -101.6185637 },
+  },
+
+  "X-04": {
+    name: "Ruta X-04",
+    color: "#6B46C1",
+    description: "Terminal Delta — Terminal San Juan Bosco",
+    empresa: "Garmex",
+    tipo: "Expreso",
+    // KML source: /public/data/X-04.kml
+    inicio: { lat: 21.0950899, lng: -101.6178084 },
+    termina: { lat: 21.1319956, lng: -101.716062 },
+  },
+
+  "R-17": {
+    name: "Ruta R-17",
+    color: "#A52714",
+    description: "León II — Jardines de San Pedro",
+    empresa: "Bellavista",
+    tipo: "Convencional",
+    // KML source: /public/data/R-17.kml
+    inicio: { lat: 21.1050336, lng: -101.7264271 },
+    termina: { lat: 21.142412, lng: -101.682124 },
+  },
+
+  "R-84": {
+    name: "Ruta R-84",
+    color: "#A52714",
+    description: "Colonia Punta Dorada — Colonia Centro",
+    empresa: "La Catorceava",
+    tipo: "Convencional",
+    // KML source: /public/data/R-84.kml
+    inicio: { lat: 21.130715, lng: -101.770264 },
+    termina: { lat: 21.122339, lng: -101.686464 },
   },
 };
 
