@@ -9,7 +9,7 @@ import { VALID_ROUTE_IDS } from '../lib/route-config'
 
 const STORAGE_KEY = 'preferred-bus-routes-v2' // Versioned key for multi-select
 const OLD_STORAGE_KEY = 'preferred-bus-route'
-const DEFAULT_ROUTES = ['A-03', 'A-31', 'L-04']
+const DEFAULT_ROUTES = ['A-03', 'A-31', 'L-04', 'X-04']
 const MAX_SELECTION = 5
 
 let googleMapsOptionsSet = false

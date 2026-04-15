@@ -9,7 +9,7 @@
  */
 
 /**
- * Metadata for bus routes A-03, A-75, A-31 and L-03 in León, Guanajuato.
+ * Metadata for bus routes A-03, A-75, A-31, L-03, L-04 and X-04 in León, Guanajuato.
  * Actual route geometry is loaded at runtime from /public/data/*.kml
  */
 
@@ -76,6 +76,17 @@ export const routes: Record<string, BusRoute> = {
     // KML source: /public/data/L-04.kml
     inicio: { lat: 21.132393, lng: -101.71618 },
     termina: { lat: 21.0955648, lng: -101.6185637 },
+  },
+
+  "X-04": {
+    name: "Ruta X-04",
+    color: "#6B46C1",
+    description: "Terminal Delta — Terminal San Juan Bosco",
+    empresa: "Garmex",
+    tipo: "Expreso",
+    // KML source: /public/data/X-04.kml
+    inicio: { lat: 21.0950899, lng: -101.6178084 },
+    termina: { lat: 21.1319956, lng: -101.716062 },
   },
 };
 

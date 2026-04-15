@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Rutas de Bus — A-03, A-75, A-31 & L-03",
-  description: "Mapa en tiempo real de las rutas A-03, A-75, A-31 y L-03 en León, Guanajuato",
+  title: "Rutas de Bus — A-03, A-31, L-04 & X-04",
+  description: "Mapa en tiempo real de las rutas A-03, A-31, L-04 y X-04 en León, Guanajuato",
 };
 
 export default function RootLayout({
