@@ -46,6 +46,7 @@ export function parseCustomPayload(dataString: string): Result<ParsedResult, Err
     const decodedString = base64ToString(dataString);
 
     if (!decodedString.includes('|')) {
+      console.log('[no rows] Decoded string:', decodedString); // Debugging output
       return { ok: false, error: new Error('Invalid payload format: missing row delimiter') };
     }
 
@@ -53,6 +54,7 @@ export function parseCustomPayload(dataString: string): Result<ParsedResult, Err
 
     const footerRaw = rawRows.pop();
     if (!footerRaw) {
+      console.log('[no footer] Decoded string:', decodedString); // Debugging output
       return { ok: false, error: new Error('Invalid payload format: missing footer') };
     }
     const paginationData = footerRaw.replace('&', '').trim();
