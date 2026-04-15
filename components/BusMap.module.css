@@ -31,12 +31,18 @@
   border-radius: 16px;
   border: none;
   background: white;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 500;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
   outline: none;
   transition: box-shadow 0.2s;
   backdrop-filter: blur(8px);
+}
+
+@media (min-width: 768px) {
+  .searchInput {
+    font-size: 15px;
+  }
 }
 
 .searchInput:focus {
@@ -62,7 +68,9 @@
   border-radius: 16px;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
   max-height: 300px;
+  max-height: calc(var(--vv-height, 100dvh) - 180px);
   overflow-y: auto;
+  overscroll-behavior: contain;
   border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
@@ -109,6 +117,12 @@
 
 .trayExpanded {
   transform: translateY(0);
+}
+
+.trayHiddenMobile {
+  @media (max-width: 767px) {
+    display: none;
+  }
 }
 
 .trayHeader {

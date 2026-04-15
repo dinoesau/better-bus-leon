@@ -101,6 +101,21 @@ export default function BusMap() {
   const [isTrayExpanded, setIsTrayExpanded] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [showToast, setShowToast] = useState(false)
+  const [vvHeight, setVvHeight] = useState('100dvh')
+
+  // Visual Viewport Tracking (for mobile keyboards)
+  useEffect(() => {
+    if (!window.visualViewport) return
+
+    const handleResize = () => {
+      setVvHeight(`${window.visualViewport?.height || window.innerHeight}px`)
+    }
+
+    window.visualViewport.addEventListener('resize', handleResize)
+    handleResize() // Initial call
+
+    return () => window.visualViewport?.removeEventListener('resize', handleResize)
+  }, [])
   
   // Real-time data maps
   const [busDataMap, setBusDataMap] = useState<Record<string, RouteBusState>>({})
@@ -356,7 +371,7 @@ export default function BusMap() {
   }
 
   return (
-    <div className={styles.mapContainer}>
+    <div className={styles.mapContainer} style={{ '--vv-height': vvHeight } as React.CSSProperties}>
       <div className={styles.map}>
         <div ref={mapRef} style={{ height: '100%', width: '100%' }} />
       </div>
@@ -369,15 +384,20 @@ export default function BusMap() {
             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           </svg>
         </div>
-        <input
-          type="text"
-          className={styles.searchInput}
-          placeholder="Busca tu ruta..."
-          aria-label="Buscar rutas de autobús"
-          value={searchQuery}
-          onChange={(e) => { setSearchQuery(e.target.value); setIsSearchOpen(true) }}
-          onFocus={() => setIsSearchOpen(true)}
-        />
+        <form onSubmit={(e) => { e.preventDefault(); (document.activeElement as HTMLElement)?.blur() }}>
+          <input
+            type="search"
+            inputMode="search"
+            enterKeyHint="search"
+            className={styles.searchInput}
+            placeholder="Busca tu ruta..."
+            aria-label="Buscar rutas de autobús"
+            value={searchQuery}
+            onChange={(e) => { setSearchQuery(e.target.value); setIsSearchOpen(true) }}
+            onFocus={() => setIsSearchOpen(true)}
+          />
+        </form>
+
         
         {isSearchOpen && (
           <div className={styles.searchResults}>
@@ -407,7 +427,7 @@ export default function BusMap() {
       </div>
 
       {/* Center on Me Button */}
-      {userPosition && (
+      {userPosition && !isSearchOpen && (
         <button 
           className={styles.centerMeButton} 
           onClick={centerOnUser}
@@ -425,7 +445,7 @@ export default function BusMap() {
       )}
 
       {/* Bottom Tray */}
-      <div className={`${styles.bottomTray} ${isTrayExpanded ? styles.trayExpanded : styles.trayCollapsed}`}>
+      <div className={`${styles.bottomTray} ${isTrayExpanded ? styles.trayExpanded : styles.trayCollapsed} ${isSearchOpen ? styles.trayHiddenMobile : ''}`}>
         <div className={styles.trayHeader} onClick={() => setIsTrayExpanded(!isTrayExpanded)}>
           <div className={styles.trayHandle} />
           <div className={styles.traySummary}>
