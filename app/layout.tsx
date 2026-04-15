@@ -28,9 +28,9 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} h-[100dvh] antialiased`}
     >
-      <body className="min-h-screen flex flex-col bg-white">
+      <body className="h-full flex flex-col bg-white">
         <JsonLd />
         {children}
         <SpeedInsights />
