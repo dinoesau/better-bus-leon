@@ -60,6 +60,7 @@ export function parseCustomPayload(dataString: string): Result<ParsedResult, Err
     const paginationData = footerRaw.replace('&', '').trim();
 
     if (rawRows.length === 0) {
+      console.log('[no data] Decoded string:', decodedString); // Debugging output
       return { ok: false, error: new Error('Invalid payload format: no data rows') };
     }
 
@@ -72,6 +73,7 @@ export function parseCustomPayload(dataString: string): Result<ParsedResult, Err
     const result = z.array(BusLocationSchema).safeParse(parsedRows);
 
     if (!result.success) {
+      console.log('[invalid rows] Decoded string:', decodedString); // Debugging output
       // Rule 2: Treat Errors as Values. We map Zod errors to a clear Result.
       const firstError = result.error.issues[0];
       const path = firstError.path.join('.');
