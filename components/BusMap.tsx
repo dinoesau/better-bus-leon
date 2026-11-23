@@ -191,7 +191,7 @@ export default function BusMap() {
         })
       },
       (err) => console.error('Geolocation error:', err),
-      { enableHighAccuracy: true, maximumAge: 10000 }
+      { enableHighAccuracy: false, maximumAge: 60000, timeout: 10000 }
     )
 
     return () => navigator.geolocation.clearWatch(watchId)
